@@ -42,7 +42,7 @@
           <label><input type="checkbox" id="ckLayaway" style="width:auto;display:inline-block;margin-right:8px;" /> Use Layaway (pay 60% now, 40% at completion)</label>
         </div>
         <button type="submit" class="btn btn-gold btn-block" id="ckSubmit">Continue to Payment</button>
-        <p class="form-note">Payment is securely completed on our Squarespace-powered checkout. You'll be redirected to finish your order.</p>
+        <p class="form-note">Standard orders pay securely via Square. Layaway orders are confirmed by email with a Square invoice for your deposit.</p>
       </form>
     </div>
 
@@ -50,12 +50,13 @@
   </div>
 </section>
 
-<section class="section" id="confirmSection" style="display:none;text-align:center;">
-  <div class="container">
-    <span class="eyebrow">Order Received</span>
-    <h2 id="confirmHeading">Thank You!</h2>
+<section class="section" id="confirmSection" style="display:none;">
+  <div class="container" style="text-align:center;max-width:640px;">
+    <span class="eyebrow" id="confirmEyebrow">Almost There</span>
+    <h2 id="confirmHeading">Complete Your Payment</h2>
     <p id="confirmBody" style="max-width:520px;margin:0 auto 24px;"></p>
-    <a href="products.html" class="btn btn-primary">Continue Shopping</a>
+    <div id="confirmActions" style="display:flex;flex-direction:column;gap:12px;align-items:stretch;"></div>
+    <a href="products.html" class="btn btn-outline" style="margin-top:24px;">Continue Shopping</a>
   </div>
 </section>
 
@@ -76,6 +77,8 @@
   const noticeEl = document.getElementById("acctNotice");
   if (user) {
     document.getElementById("ckEmail").value = user.email;
+    document.getElementById("ckFirst").value = user.name.split(" ")[0] || "";
+    document.getElementById("ckLast").value = user.name.split(" ").slice(1).join(" ") || "";
     noticeEl.textContent = `Checking out as ${user.name} (${user.email}).`;
   } else if (session && session.guest) {
     noticeEl.innerHTML = `Checking out as guest. <a href="login.html?next=checkout.html" style="color:var(--sd-purple);font-weight:600;">Sign in or create an account</a> to save this info for next time.`;
@@ -106,24 +109,69 @@
         </div>
       ` : ""}
     `;
-    document.getElementById("ckSubmit").textContent = useLayaway ? "Pay Deposit & Start Layaway" : "Continue to Payment";
+    document.getElementById("ckSubmit").textContent = useLayaway ? "Request Layaway Plan" : "Continue to Payment";
   }
   layawayCheckbox.addEventListener("change", renderSummary);
   renderSummary();
 
   document.getElementById("checkoutForm").addEventListener("submit", (e) => {
     e.preventDefault();
+    const lines = sdCartLinesWithProducts();
+    if (lines.length === 0) { sdToast("Your cart is empty"); return; }
+
     const email = document.getElementById("ckEmail").value.trim();
+    const first = document.getElementById("ckFirst").value.trim();
+    const last = document.getElementById("ckLast").value.trim();
+    const address = document.getElementById("ckAddress").value.trim();
+    const city = document.getElementById("ckCity").value.trim();
+    const zip = document.getElementById("ckZip").value.trim();
     sdSubscribeNewsletter(email);
+
+    const subtotal = sdCartSubtotal();
+    const shipping = subtotal >= 100 ? 0 : 8;
+    const total = subtotal + shipping;
     const useLayaway = layawayCheckbox.checked;
-    const total = sdCartSubtotal();
 
     document.getElementById("checkoutSection").style.display = "none";
     document.getElementById("confirmSection").style.display = "block";
-    document.getElementById("confirmHeading").textContent = useLayaway ? "Layaway Started!" : "Order Confirmed!";
-    document.getElementById("confirmBody").textContent = useLayaway
-      ? `Your ${sdFormatPrice(total * 0.6)} deposit has been received and your order is now in production. We'll email ${email} when the remaining ${sdFormatPrice(total * 0.4)} balance is due before shipping.`
-      : `A confirmation has been sent to ${email}. In production this step hands off to secure Squarespace checkout for payment.`;
+    const actionsEl = document.getElementById("confirmActions");
+
+    if (useLayaway) {
+      const deposit = total * 0.6;
+      const balance = total * 0.4;
+      document.getElementById("confirmEyebrow").textContent = "Layaway Requested";
+      document.getElementById("confirmHeading").textContent = "One Step Left";
+      document.getElementById("confirmBody").textContent =
+        `Send us your layaway request below. We'll reply to ${email} with a secure Square invoice for your ${sdFormatPrice(deposit)} deposit (60%) — your order enters production once it's paid, and the remaining ${sdFormatPrice(balance)} (40%) is due at completion, before it ships.`;
+
+      const bodyLines = [
+        `Name: ${first} ${last}`,
+        `Email: ${email}`,
+        `Shipping Address: ${address}, ${city} ${zip}`,
+        ``,
+        `Items:`,
+        ...lines.map(l => `- ${l.qty} x ${l.product.name} (${sdFormatPrice(l.product.price)} each)`),
+        ``,
+        `Order Total: ${sdFormatPrice(total)}`,
+        `Deposit Due Now (60%): ${sdFormatPrice(deposit)}`,
+        `Balance Due At Completion (40%): ${sdFormatPrice(balance)}`,
+      ];
+      const mailLink = `mailto:layaway@sododumaki.com?subject=${encodeURIComponent("Layaway Request — " + first + " " + last)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+
+      actionsEl.innerHTML = `<a class="btn btn-gold" href="${mailLink}">Email My Layaway Request</a>`;
+    } else {
+      document.getElementById("confirmEyebrow").textContent = "Almost There";
+      document.getElementById("confirmHeading").textContent = "Complete Your Payment";
+      document.getElementById("confirmBody").textContent =
+        `Thanks, ${first || "there"} — pay for each item below through our secure Square checkout. Every item opens in a new tab; once all payments are complete, you're all set. A copy of your order has been noted for ${email}.`;
+
+      actionsEl.innerHTML = lines.map(l => {
+        const lineTotal = sdFormatPrice(l.product.price * l.qty);
+        return l.product.squareLink
+          ? `<a class="btn btn-gold" href="${l.product.squareLink}" target="_blank" rel="noopener">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Square</a>`
+          : `<button class="btn btn-gold" disabled title="Square payment link not connected yet">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Coming Soon</button>`;
+      }).join("");
+    }
 
     sdSaveCart([]);
   });

@@ -349,8 +349,9 @@ p { margin: 0 0 1em; color: var(--text); }
 .product-name { font-size: 1rem; font-weight: 600; margin: 0; text-transform: none; letter-spacing: 0; font-family: var(--font-body); }
 .product-price { font-family: var(--font-display); font-size: 1.25rem; letter-spacing: .04em; color: var(--sd-purple); }
 .product-price .strike { color: var(--text-muted); text-decoration: line-through; font-size: .95rem; margin-right: 8px; }
-.product-actions { margin-top: auto; display: flex; gap: 8px; }
+.product-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
 .product-actions .btn { flex: 1; padding: 11px 12px; font-size: .82rem; }
+.product-actions .btn[disabled] { background: var(--sd-grey-100); color: var(--text-muted); border-color: var(--sd-grey-100); }
 
 /* ---------- Forms ---------- */
 .form-card {

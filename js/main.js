@@ -3,7 +3,7 @@
    Demo-grade client-side storage (localStorage).
    NOTE: This simulates accounts/cart/layaway for
    prototype purposes only. See README.md for how
-   to wire up a real backend + Squarespace before
+   to wire up a real backend + Square before
    launch — do not treat localStorage as a
    production user database or payment system.
    ============================================ */
@@ -231,7 +231,7 @@ function sdRenderFooter() {
         </div>
         <div class="footer-bottom">
           <span>&copy; ${new Date().getFullYear()} Sodo Dumaki Athletics. All rights reserved.</span>
-          <span>Payments securely processed via Squarespace.</span>
+          <span>Payments securely processed via Square.</span>
         </div>
       </div>
     </footer>
@@ -249,6 +249,9 @@ function sdRenderFooter() {
 /* ---------------- product card rendering ---------------- */
 function sdProductCardHtml(p) {
   const badge = p.badge ? `<span class="badge ${p.badge === "New" ? "badge-purple" : ""}">${p.badge}</span>` : "";
+  const buyBtn = p.squareLink
+    ? `<a class="btn btn-gold btn-block" href="${p.squareLink}" target="_blank" rel="noopener">Buy Now — Square</a>`
+    : `<button class="btn btn-gold btn-block" disabled title="Square payment link not connected yet">Buy Now — Coming Soon</button>`;
   return `
     <div class="product-card" data-category="${p.category}">
       <div class="product-media">
@@ -260,8 +263,11 @@ function sdProductCardHtml(p) {
         <p class="product-name">${p.name}</p>
         <span class="product-price">${sdFormatPrice(p.price)}</span>
         <div class="product-actions">
-          <button class="btn btn-primary" data-add-to-cart="${p.id}">Add to Cart</button>
-          <a class="btn btn-outline" href="layaway.html?item=${p.id}">Layaway</a>
+          ${buyBtn}
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" data-add-to-cart="${p.id}">Add to Cart</button>
+            <a class="btn btn-outline" href="layaway.html?item=${p.id}">Layaway</a>
+          </div>
         </div>
       </div>
     </div>
