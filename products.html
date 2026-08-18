@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shop All Products — Sodo Dumaki</title>
+<meta name="description" content="Shop the full Sodo Dumaki collection: tops, bottoms, outerwear, headwear, bags and accessories." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">The Full Collection</span>
+    <h1>Shop Sodo Dumaki</h1>
+    <p>Performance fabrics, designer detailing. Every piece ships fast — or start a layaway plan at checkout.</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="filter-tabs" id="filterTabs"></div>
+    <div class="product-grid" id="productGrid"></div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("products.html");
+  sdRenderFooter();
+
+  const tabsEl = document.getElementById("filterTabs");
+  const gridEl = document.getElementById("productGrid");
+
+  function renderProducts(category) {
+    const items = category === "all" ? SD_PRODUCTS : SD_PRODUCTS.filter(p => p.category === category);
+    gridEl.innerHTML = items.map(sdProductCardHtml).join("");
+    sdBindAddToCartButtons(gridEl);
+  }
+
+  function setActiveTab(category) {
+    tabsEl.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.cat === category));
+  }
+
+  tabsEl.innerHTML = SD_CATEGORIES.map(c => `<button data-cat="${c.id}">${c.label}</button>`).join("");
+  tabsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    setActiveTab(btn.dataset.cat);
+    renderProducts(btn.dataset.cat);
+    history.replaceState(null, "", btn.dataset.cat === "all" ? "products.html" : `products.html#${btn.dataset.cat}`);
+  });
+
+  const initialCat = SD_CATEGORIES.some(c => c.id === location.hash.replace("#","")) ? location.hash.replace("#","") : "all";
+  setActiveTab(initialCat);
+  renderProducts(initialCat);
+</script>
+</body>
+</html>

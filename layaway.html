@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Layaway — Sodo Dumaki</title>
+<meta name="description" content="Start a Sodo Dumaki layaway plan: 60% down to begin your order, 40% due at completion." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">No Interest &middot; No Credit Check</span>
+    <h1>Layaway</h1>
+    <p>Lock in your gear today. Pay 60% to start your order, and the remaining 40% when it's complete — before it ships.</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">How It Works</span>
+    <h2>3 Simple Steps</h2>
+    <div class="divider-gold"></div>
+    <div class="layaway-steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Choose Your Gear</h3>
+        <p>Pick any item (or full order) from the collection and choose "Layaway" instead of full payment at checkout.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Pay 60% Down</h3>
+        <p>Your order is placed into production only after the 60% deposit clears. This locks your size and color.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Pay 40% At Completion</h3>
+        <p>Once your order is complete and ready, we'll invoice the remaining 40%. Your gear ships as soon as it's paid in full.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <span class="eyebrow">Estimate Your Plan</span>
+    <h2>Layaway Calculator</h2>
+    <div class="divider-gold"></div>
+    <div class="calc-card">
+      <div class="grid-2" style="align-items:flex-start;">
+        <div>
+          <div class="field">
+            <label for="calcProduct">Choose a product (optional)</label>
+            <select id="calcProduct">
+              <option value="">— Custom amount —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="calcAmount">Order total ($)</label>
+            <input type="number" id="calcAmount" min="1" step="0.01" placeholder="e.g. 148.00" />
+          </div>
+          <p class="field-hint" style="color:var(--sd-grey-300);">Adjust the amount to see your deposit and balance update instantly.</p>
+        </div>
+        <div class="calc-result" id="calcResult">
+          <div class="item"><div class="num">$0.00</div><div class="label">Due Today (60%)</div></div>
+          <div class="item"><div class="num">$0.00</div><div class="label">Due At Completion (40%)</div></div>
+          <div class="item"><div class="num">$0.00</div><div class="label">Order Total</div></div>
+        </div>
+      </div>
+      <a href="checkout.html?mode=layaway" class="btn btn-gold" style="margin-top:26px;">Start This Layaway Plan</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">Good To Know</span>
+    <h2>Layaway FAQ</h2>
+    <div class="divider-gold"></div>
+    <div class="grid-3">
+      <div class="value-card">
+        <h3>When does my order start?</h3>
+        <p>Production begins the moment your 60% deposit clears — not before. Nothing ships until it's paid in full.</p>
+      </div>
+      <div class="value-card">
+        <h3>When is the balance due?</h3>
+        <p>The remaining 40% is invoiced by email as soon as your order is complete and ready to ship.</p>
+      </div>
+      <div class="value-card">
+        <h3>Can I cancel?</h3>
+        <p>Yes, before production begins. Once your deposit is applied and production has started, deposits are non-refundable.</p>
+      </div>
+      <div class="value-card">
+        <h3>Is there interest?</h3>
+        <p>Never. Layaway is a payment schedule, not a loan — no interest, no credit check, no fees.</p>
+      </div>
+      <div class="value-card">
+        <h3>How do I pay the balance?</h3>
+        <p>You'll get a secure Squarespace payment link by email once your order is ready for final payment.</p>
+      </div>
+      <div class="value-card">
+        <h3>Does layaway apply to sale items?</h3>
+        <p>Yes — layaway is available storewide, including limited drops and sale pieces, while supplies last.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("layaway.html");
+  sdRenderFooter();
+
+  const select = document.getElementById("calcProduct");
+  select.innerHTML += SD_PRODUCTS.map(p => `<option value="${p.price}" data-id="${p.id}">${p.name} — ${sdFormatPrice(p.price)}</option>`).join("");
+
+  const amountInput = document.getElementById("calcAmount");
+  const resultEl = document.getElementById("calcResult");
+
+  function updateCalc(total) {
+    const t = Math.max(0, Number(total) || 0);
+    const deposit = t * 0.6;
+    const balance = t * 0.4;
+    resultEl.innerHTML = `
+      <div class="item"><div class="num">${sdFormatPrice(deposit)}</div><div class="label">Due Today (60%)</div></div>
+      <div class="item"><div class="num">${sdFormatPrice(balance)}</div><div class="label">Due At Completion (40%)</div></div>
+      <div class="item"><div class="num">${sdFormatPrice(t)}</div><div class="label">Order Total</div></div>
+    `;
+  }
+
+  select.addEventListener("change", () => {
+    if (select.value) {
+      amountInput.value = Number(select.value).toFixed(2);
+      updateCalc(select.value);
+    }
+  });
+  amountInput.addEventListener("input", () => updateCalc(amountInput.value));
+
+  const params = new URLSearchParams(location.search);
+  const preselect = params.get("item");
+  if (preselect) {
+    const opt = [...select.options].find(o => o.dataset.id === preselect);
+    if (opt) { select.value = opt.value; amountInput.value = Number(opt.value).toFixed(2); updateCalc(opt.value); }
+  } else {
+    updateCalc(0);
+  }
+</script>
+</body>
+</html>

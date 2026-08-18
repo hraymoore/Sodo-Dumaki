@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Careers — Sodo Dumaki</title>
+<meta name="description" content="Join the Sodo Dumaki team. Open roles in retail, fulfillment, marketing and design." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Join The Team</span>
+    <h1>Careers At Sodo Dumaki</h1>
+    <p>We're a small, fast-growing athletic-designer brand looking for people who play as hard off the clock as they do on it.</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">Open Positions</span>
+    <h2>Current Openings</h2>
+    <div class="divider-gold"></div>
+
+    <div id="jobList"></div>
+
+    <p style="margin-top:30px;color:var(--text-muted);">Don't see the right fit? Send your resume to
+      <a href="mailto:careers@sododumaki.com" style="color:var(--sd-purple);font-weight:600;">careers@sododumaki.com</a> — we're always open to meeting talented people.
+    </p>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <span class="eyebrow">Why Sodo Dumaki</span>
+    <h2>Life On The Team</h2>
+    <div class="perk-grid">
+      <div class="perk"><div class="icon">🏀</div><strong>Gear Allowance</strong><p style="margin-top:6px;font-size:.85rem;">Quarterly credit toward the full collection.</p></div>
+      <div class="perk"><div class="icon">🩺</div><strong>Health Coverage</strong><p style="margin-top:6px;font-size:.85rem;">Medical, dental &amp; vision for full-time staff.</p></div>
+      <div class="perk"><div class="icon">📈</div><strong>Growth Path</strong><p style="margin-top:6px;font-size:.85rem;">We promote from within as the brand scales.</p></div>
+      <div class="perk"><div class="icon">🤝</div><strong>Flexible Culture</strong><p style="margin-top:6px;font-size:.85rem;">Hybrid schedules and a team that respects your time.</p></div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("careers.html");
+  sdRenderFooter();
+
+  const jobs = [
+    { title: "Retail Sales Associate", type: "Part-Time", location: "Seattle, WA",
+      desc: "Deliver a premium in-store experience, help customers find their fit, and represent the Sodo Dumaki brand on the floor." },
+    { title: "Warehouse & Fulfillment Associate", type: "Full-Time", location: "Kent, WA",
+      desc: "Pick, pack and ship online orders (including layaway completions) accurately and on time as order volume grows." },
+    { title: "Social Media & Marketing Coordinator", type: "Full-Time", location: "Remote",
+      desc: "Own our content calendar across Instagram, TikTok and email — drops, athlete features, and community stories." },
+    { title: "Apparel Graphic Designer", type: "Contract", location: "Remote",
+      desc: "Design seasonal graphics, product colorways and packaging that keep the purple/gold/black identity sharp and consistent." },
+    { title: "Customer Experience Representative", type: "Part-Time", location: "Remote",
+      desc: "Support customers over email and chat — orders, sizing, layaway plans, and returns — with a fast, friendly response." },
+  ];
+
+  document.getElementById("jobList").innerHTML = jobs.map(j => `
+    <div class="job-card">
+      <div>
+        <h3 style="margin-bottom:0;">${j.title}</h3>
+        <div class="job-meta"><span>${j.type}</span><span>${j.location}</span></div>
+        <p class="job-desc">${j.desc}</p>
+      </div>
+      <a class="btn btn-primary btn-sm" href="mailto:careers@sododumaki.com?subject=Application: ${encodeURIComponent(j.title)}">Apply Now</a>
+    </div>
+  `).join("");
+</script>
+</body>
+</html>

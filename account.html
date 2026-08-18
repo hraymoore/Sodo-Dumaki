@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Account — Sodo Dumaki</title>
+<meta name="description" content="Manage your Sodo Dumaki profile, orders, and layaway plans." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow" id="accountEyebrow">My Portal</span>
+    <h1 id="accountHeading">My Account</h1>
+  </div>
+</div>
+
+<section class="section" id="accountSection" style="display:none;">
+  <div class="container account-grid">
+    <div class="account-nav" id="accountNav">
+      <button data-panel="profile" class="active">Profile</button>
+      <button data-panel="orders">Order History</button>
+      <button data-panel="layaway">Layaway Plans</button>
+      <button data-panel="logout">Sign Out</button>
+    </div>
+
+    <div class="account-panel">
+      <div id="panel-profile">
+        <h3>Profile</h3>
+        <p id="profileEmail" style="color:var(--text-muted);"></p>
+        <p style="color:var(--text-muted);font-size:.85rem;">This is a prototype account view — your info is stored locally in this browser for demo purposes.</p>
+      </div>
+      <div id="panel-orders" style="display:none;">
+        <h3>Order History</h3>
+        <div class="order-row"><div><strong>#SD-10432</strong><div style="color:var(--text-muted);font-size:.85rem;">Dumaki Coach's Bench Jacket &middot; Aug 2, 2026</div></div><span class="status-pill shipped">Shipped</span></div>
+        <div class="order-row"><div><strong>#SD-10287</strong><div style="color:var(--text-muted);font-size:.85rem;">Sodo Signature Crewneck Hoodie &middot; Jun 14, 2026</div></div><span class="status-pill paid">Delivered</span></div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:16px;">Sample data shown for demo purposes — real orders sync from Squarespace once connected.</p>
+      </div>
+      <div id="panel-layaway" style="display:none;">
+        <h3>Layaway Plans</h3>
+        <div class="order-row">
+          <div><strong>#LP-2201</strong><div style="color:var(--text-muted);font-size:.85rem;">Sodo Elite Duffel Bag &middot; Total $95.00</div></div>
+          <span class="status-pill layaway">60% Paid — In Production</span>
+        </div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:16px;">Sample data shown for demo purposes. Start a new plan any time from the <a href="layaway.html" style="color:var(--sd-purple);">Layaway page</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="guestSection" style="display:none;">
+  <div class="container" style="text-align:center;">
+    <h2>You're Shopping As A Guest</h2>
+    <p style="max-width:480px;margin:0 auto 24px;color:var(--text-muted);">Create a free account any time to save your info, track orders, and manage layaway plans.</p>
+    <div class="hero-cta" style="justify-content:center;">
+      <a href="login.html?next=account.html" class="btn btn-primary">Create Account / Sign In</a>
+      <a href="products.html" class="btn btn-outline">Continue Shopping</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="loggedOutSection" style="display:none;">
+  <div class="container" style="text-align:center;">
+    <h2>Sign In To View Your Account</h2>
+    <p style="max-width:480px;margin:0 auto 24px;color:var(--text-muted);">Create a profile with your email, or shop as a guest — the choice is yours.</p>
+    <a href="login.html?next=account.html" class="btn btn-primary">Sign In / Create Account</a>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("account.html");
+  sdRenderFooter();
+
+  const session = sdCurrentSession();
+  const user = sdCurrentUser();
+
+  if (user) {
+    document.getElementById("accountSection").style.display = "block";
+    document.getElementById("accountHeading").textContent = `Welcome, ${user.name.split(" ")[0]}`;
+    document.getElementById("profileEmail").textContent = user.email;
+
+    const nav = document.getElementById("accountNav");
+    nav.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.dataset.panel === "logout") { sdLogout(); location.href = "index.html"; return; }
+      nav.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      ["profile","orders","layaway"].forEach(p => {
+        document.getElementById(`panel-${p}`).style.display = p === btn.dataset.panel ? "block" : "none";
+      });
+    });
+  } else if (session && session.guest) {
+    document.getElementById("guestSection").style.display = "block";
+    document.getElementById("accountHeading").textContent = "Guest Checkout";
+  } else {
+    document.getElementById("loggedOutSection").style.display = "block";
+    document.getElementById("accountHeading").textContent = "My Account";
+  }
+</script>
+</body>
+</html>

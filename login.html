@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In or Create Account — Sodo Dumaki</title>
+<meta name="description" content="Sign in to your Sodo Dumaki account, create a new profile with your email, or continue as a guest." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<section class="section" style="padding-top:56px;">
+  <div class="container">
+    <div class="filter-tabs" id="authTabs" style="justify-content:center;">
+      <button data-tab="login" class="active">Sign In</button>
+      <button data-tab="signup">Create Account</button>
+    </div>
+
+    <div class="form-card" id="loginPanel">
+      <h2 style="text-align:center;font-size:1.6rem;">Welcome Back</h2>
+      <p style="text-align:center;color:var(--text-muted);margin-bottom:24px;">Sign in to view orders and layaway plans.</p>
+      <div class="form-alert" id="loginAlert"></div>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" required />
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" required minlength="6" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+      <div class="form-divider">or</div>
+      <button class="btn btn-outline btn-block" id="guestBtnLogin">Continue as Guest</button>
+      <p class="form-note">New here? <a href="#" data-switch="signup" style="color:var(--sd-purple);font-weight:600;">Create an account</a></p>
+    </div>
+
+    <div class="form-card" id="signupPanel" style="display:none;">
+      <h2 style="text-align:center;font-size:1.6rem;">Create Your Account</h2>
+      <p style="text-align:center;color:var(--text-muted);margin-bottom:24px;">Track orders, save your fit, and manage layaway plans.</p>
+      <div class="form-alert" id="signupAlert"></div>
+      <form id="signupForm">
+        <div class="field">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" required />
+        </div>
+        <div class="field">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" required />
+        </div>
+        <div class="field">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" required minlength="6" />
+          <div class="field-hint">At least 6 characters.</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+      </form>
+      <div class="form-divider">or</div>
+      <button class="btn btn-outline btn-block" id="guestBtnSignup">Continue as Guest</button>
+      <p class="form-note">Already have an account? <a href="#" data-switch="login" style="color:var(--sd-purple);font-weight:600;">Sign in</a></p>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("login.html");
+  sdRenderFooter();
+
+  const tabsEl = document.getElementById("authTabs");
+  const loginPanel = document.getElementById("loginPanel");
+  const signupPanel = document.getElementById("signupPanel");
+
+  function showTab(tab) {
+    loginPanel.style.display = tab === "login" ? "block" : "none";
+    signupPanel.style.display = tab === "signup" ? "block" : "none";
+    tabsEl.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  }
+  tabsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (btn) showTab(btn.dataset.tab);
+  });
+  document.querySelectorAll("[data-switch]").forEach(a => {
+    a.addEventListener("click", (e) => { e.preventDefault(); showTab(a.dataset.switch); });
+  });
+
+  function alertBox(el, message, type) {
+    el.textContent = message;
+    el.className = `form-alert show ${type}`;
+  }
+
+  function redirectAfterAuth() {
+    const params = new URLSearchParams(location.search);
+    location.href = params.get("next") || "account.html";
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const result = sdLogin(email, password);
+    const alertEl = document.getElementById("loginAlert");
+    if (result.ok) { alertBox(alertEl, "Signed in — redirecting...", "success"); setTimeout(redirectAfterAuth, 600); }
+    else alertBox(alertEl, result.error, "error");
+  });
+
+  document.getElementById("signupForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+    const result = sdSignup(name, email, password);
+    const alertEl = document.getElementById("signupAlert");
+    if (result.ok) { alertBox(alertEl, "Account created — redirecting...", "success"); setTimeout(redirectAfterAuth, 600); }
+    else alertBox(alertEl, result.error, "error");
+  });
+
+  document.getElementById("guestBtnLogin").addEventListener("click", () => { sdContinueAsGuest(); redirectAfterAuth(); });
+  document.getElementById("guestBtnSignup").addEventListener("click", () => { sdContinueAsGuest(); redirectAfterAuth(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Checkout — Sodo Dumaki</title>
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Step 2 of 2</span>
+    <h1 id="checkoutHeading">Checkout</h1>
+  </div>
+</div>
+
+<section class="section" id="checkoutSection">
+  <div class="container grid-2" style="align-items:start;">
+    <div class="form-card" style="max-width:none;">
+      <div class="form-alert show" id="acctNotice" style="background:var(--bg-alt);color:var(--sd-grey-700);border:1px solid var(--border);"></div>
+      <form id="checkoutForm">
+        <div class="field">
+          <label for="ckEmail">Email</label>
+          <input type="email" id="ckEmail" required />
+        </div>
+        <div class="grid-2" style="gap:16px;">
+          <div class="field"><label for="ckFirst">First Name</label><input type="text" id="ckFirst" required /></div>
+          <div class="field"><label for="ckLast">Last Name</label><input type="text" id="ckLast" required /></div>
+        </div>
+        <div class="field"><label for="ckAddress">Shipping Address</label><input type="text" id="ckAddress" required /></div>
+        <div class="grid-2" style="gap:16px;">
+          <div class="field"><label for="ckCity">City</label><input type="text" id="ckCity" required /></div>
+          <div class="field"><label for="ckZip">ZIP Code</label><input type="text" id="ckZip" required /></div>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="ckLayaway" style="width:auto;display:inline-block;margin-right:8px;" /> Use Layaway (pay 60% now, 40% at completion)</label>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block" id="ckSubmit">Continue to Payment</button>
+        <p class="form-note">Payment is securely completed on our Squarespace-powered checkout. You'll be redirected to finish your order.</p>
+      </form>
+    </div>
+
+    <div class="summary-card" id="orderSummary"></div>
+  </div>
+</section>
+
+<section class="section" id="confirmSection" style="display:none;text-align:center;">
+  <div class="container">
+    <span class="eyebrow">Order Received</span>
+    <h2 id="confirmHeading">Thank You!</h2>
+    <p id="confirmBody" style="max-width:520px;margin:0 auto 24px;"></p>
+    <a href="products.html" class="btn btn-primary">Continue Shopping</a>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("checkout.html");
+  sdRenderFooter();
+
+  const params = new URLSearchParams(location.search);
+  const layawayCheckbox = document.getElementById("ckLayaway");
+  if (params.get("mode") === "layaway") layawayCheckbox.checked = true;
+
+  const user = sdCurrentUser();
+  const session = sdCurrentSession();
+  const noticeEl = document.getElementById("acctNotice");
+  if (user) {
+    document.getElementById("ckEmail").value = user.email;
+    noticeEl.textContent = `Checking out as ${user.name} (${user.email}).`;
+  } else if (session && session.guest) {
+    noticeEl.innerHTML = `Checking out as guest. <a href="login.html?next=checkout.html" style="color:var(--sd-purple);font-weight:600;">Sign in or create an account</a> to save this info for next time.`;
+  } else {
+    noticeEl.innerHTML = `<a href="login.html?next=checkout.html" style="color:var(--sd-purple);font-weight:600;">Sign in or create an account</a>, or continue below as a guest.`;
+  }
+
+  function renderSummary() {
+    const lines = sdCartLinesWithProducts();
+    const subtotal = sdCartSubtotal();
+    const shipping = subtotal >= 100 || subtotal === 0 ? 0 : 8;
+    const total = subtotal + shipping;
+    const useLayaway = layawayCheckbox.checked;
+    const deposit = total * 0.6;
+    const balance = total * 0.4;
+
+    const itemRows = lines.map(l => `<div class="summary-row"><span>${l.qty} &times; ${l.product.name}</span><span>${sdFormatPrice(l.product.price * l.qty)}</span></div>`).join("");
+
+    document.getElementById("orderSummary").innerHTML = `
+      <h3 style="margin-bottom:16px;">Order Summary</h3>
+      ${itemRows || '<p style="color:var(--text-muted);">Your cart is empty.</p>'}
+      <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? "Free" : sdFormatPrice(shipping)}</span></div>
+      <div class="summary-row total"><span>Total</span><span>${sdFormatPrice(total)}</span></div>
+      ${useLayaway ? `
+        <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--border);">
+          <div class="summary-row"><span>Due Today (60%)</span><span><strong>${sdFormatPrice(deposit)}</strong></span></div>
+          <div class="summary-row"><span>Due At Completion (40%)</span><span>${sdFormatPrice(balance)}</span></div>
+        </div>
+      ` : ""}
+    `;
+    document.getElementById("ckSubmit").textContent = useLayaway ? "Pay Deposit & Start Layaway" : "Continue to Payment";
+  }
+  layawayCheckbox.addEventListener("change", renderSummary);
+  renderSummary();
+
+  document.getElementById("checkoutForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("ckEmail").value.trim();
+    sdSubscribeNewsletter(email);
+    const useLayaway = layawayCheckbox.checked;
+    const total = sdCartSubtotal();
+
+    document.getElementById("checkoutSection").style.display = "none";
+    document.getElementById("confirmSection").style.display = "block";
+    document.getElementById("confirmHeading").textContent = useLayaway ? "Layaway Started!" : "Order Confirmed!";
+    document.getElementById("confirmBody").textContent = useLayaway
+      ? `Your ${sdFormatPrice(total * 0.6)} deposit has been received and your order is now in production. We'll email ${email} when the remaining ${sdFormatPrice(total * 0.4)} balance is due before shipping.`
+      : `A confirmation has been sent to ${email}. In production this step hands off to secure Squarespace checkout for payment.`;
+
+    sdSaveCart([]);
+  });
+</script>
+</body>
+</html>

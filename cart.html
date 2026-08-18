@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your Cart — Sodo Dumaki</title>
+<meta name="icon" href="assets/logo.svg" />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Step 1 of 2</span>
+    <h1>Your Cart</h1>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div id="cartContent"></div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  sdRenderHeader("cart.html");
+  sdRenderFooter();
+
+  function renderCart() {
+    const lines = sdCartLinesWithProducts();
+    const contentEl = document.getElementById("cartContent");
+
+    if (lines.length === 0) {
+      contentEl.innerHTML = `
+        <div class="empty-state">
+          <h3>Your cart is empty</h3>
+          <p>Looks like you haven't added anything yet.</p>
+          <a href="products.html" class="btn btn-primary">Shop The Collection</a>
+        </div>
+      `;
+      return;
+    }
+
+    const subtotal = sdCartSubtotal();
+    const rows = lines.map(l => `
+      <tr data-line="${l.id}">
+        <td>
+          <div class="cart-line">
+            <img src="${l.product.image}" alt="${l.product.name}" />
+            <div>
+              <strong>${l.product.name}</strong>
+              <div style="font-size:.8rem;color:var(--text-muted);text-transform:capitalize;">${l.product.category}</div>
+            </div>
+          </div>
+        </td>
+        <td>${sdFormatPrice(l.product.price)}</td>
+        <td><input type="number" min="1" class="qty-input" data-qty="${l.id}" value="${l.qty}" /></td>
+        <td>${sdFormatPrice(l.product.price * l.qty)}</td>
+        <td><button class="remove-link" data-remove="${l.id}">Remove</button></td>
+      </tr>
+    `).join("");
+
+    contentEl.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table class="cart-table">
+          <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="grid-2" style="margin-top:34px;align-items:start;">
+        <a href="products.html" class="btn btn-outline">&larr; Continue Shopping</a>
+        <div class="summary-card">
+          <div class="summary-row"><span>Subtotal</span><span>${sdFormatPrice(subtotal)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${subtotal >= 100 ? "Free" : "$8.00"}</span></div>
+          <div class="summary-row total"><span>Estimated Total</span><span>${sdFormatPrice(subtotal >= 100 ? subtotal : subtotal + 8)}</span></div>
+          <a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:16px;">Proceed to Checkout</a>
+          <a href="checkout.html?mode=layaway" class="btn btn-gold btn-block" style="margin-top:10px;">Checkout With Layaway</a>
+        </div>
+      </div>
+    `;
+
+    contentEl.querySelectorAll("[data-qty]").forEach(input => {
+      input.addEventListener("change", () => { sdUpdateQty(input.dataset.qty, Math.max(1, Number(input.value) || 1)); renderCart(); });
+    });
+    contentEl.querySelectorAll("[data-remove]").forEach(btn => {
+      btn.addEventListener("click", () => { sdRemoveFromCart(btn.dataset.remove); sdToast("Item removed"); renderCart(); });
+    });
+  }
+
+  renderCart();
+</script>
+</body>
+</html>
