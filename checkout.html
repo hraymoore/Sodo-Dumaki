@@ -64,6 +64,7 @@
 
 <script src="js/products-data.js"></script>
 <script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
 <script>
   sdRenderHeader("checkout.html");
   sdRenderFooter();
@@ -162,8 +163,18 @@
     } else {
       document.getElementById("confirmEyebrow").textContent = "Almost There";
       document.getElementById("confirmHeading").textContent = "Complete Your Payment";
+
+      const currentUser = sdCurrentUser();
+      let pointsNote = "";
+      if (currentUser && !currentUser.isBusiness) {
+        const earned = sdAwardPoints(email, total);
+        const tier = sdGetTier(currentUser.points || 0);
+        pointsNote = ` You just earned ${earned} Sodo Rewards points (${tier.name} tier) — track them under My Account.`;
+      } else if (!currentUser) {
+        pointsNote = ` Sign in next time to start earning Sodo Rewards points on every order.`;
+      }
       document.getElementById("confirmBody").textContent =
-        `Thanks, ${first || "there"} — pay for each item below through our secure Square checkout. Every item opens in a new tab; once all payments are complete, you're all set. A copy of your order has been noted for ${email}.`;
+        `Thanks, ${first || "there"} — pay for each item below through our secure Square checkout. Every item opens in a new tab; once all payments are complete, you're all set. A copy of your order has been noted for ${email}.${pointsNote}`;
 
       actionsEl.innerHTML = lines.map(l => {
         const lineTotal = sdFormatPrice(l.product.price * l.qty);

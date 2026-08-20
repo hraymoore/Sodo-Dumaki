@@ -27,6 +27,7 @@
       <button data-panel="profile" class="active">Profile</button>
       <button data-panel="orders">Order History</button>
       <button data-panel="layaway">Layaway Plans</button>
+      <button data-panel="rewards">Sodo Rewards</button>
       <button data-panel="logout">Sign Out</button>
     </div>
 
@@ -49,6 +50,10 @@
           <span class="status-pill layaway">60% Paid — In Production</span>
         </div>
         <p style="color:var(--sd-grey-500);font-size:.85rem;margin-top:16px;">Sample data shown for demo purposes. Start a new plan any time from the <a href="layaway.html" style="color:var(--sd-purple);">Layaway page</a>.</p>
+      </div>
+      <div id="panel-rewards" style="display:none;">
+        <h3>Sodo Rewards</h3>
+        <div id="rewardsMount"></div>
       </div>
     </div>
   </div>
@@ -166,6 +171,77 @@
     document.getElementById("accountHeading").textContent = `Welcome, ${user.name.split(" ")[0]}`;
     document.getElementById("profileEmail").textContent = user.email;
 
+    function renderRewards() {
+      const fresh = sdCurrentUser();
+      const points = fresh.points || 0;
+      const tier = sdGetTier(points);
+      const nextTier = SD_REWARD_TIERS.find((t) => t.min > points);
+      const progressPct = nextTier ? Math.min(100, Math.round((points / nextTier.min) * 100)) : 100;
+
+      const catalogHtml = SD_REWARD_CATALOG.map((r) => {
+        const canRedeem = points >= r.points;
+        return `
+          <div class="order-row">
+            <div>
+              <strong>${r.label}</strong>
+              <div style="color:var(--sd-grey-500);font-size:.85rem;">${r.points.toLocaleString()} points</div>
+            </div>
+            <button class="btn btn-sm ${canRedeem ? "btn-primary" : "btn-outline"}" ${canRedeem ? "" : "disabled"} data-redeem="${r.points}" data-label="${r.label}">
+              ${canRedeem ? "Redeem" : "Locked"}
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      const history = sdPointsHistory(fresh.email);
+      const historyHtml = history.length === 0
+        ? `<p style="color:var(--sd-grey-500);font-size:.85rem;">No points activity yet — points post automatically after checkout.</p>`
+        : history.slice(0, 8).map((o) => `
+            <div class="order-row">
+              <span style="color:var(--sd-grey-500);font-size:.85rem;">${new Date(o.date).toLocaleDateString()} &middot; ${o.type === "points-redeemed" ? o.items[0] : "Purchase"}</span>
+              <strong style="color:${o.meta.points >= 0 ? "#146c43" : "#b3261e"};">${o.meta.points >= 0 ? "+" : ""}${o.meta.points} pts</strong>
+            </div>
+          `).join("");
+
+      document.getElementById("rewardsMount").innerHTML = `
+        <div class="calc-card" style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;">
+            <div><span class="num" style="font-family:var(--font-display);font-size:2.4rem;color:var(--sd-gold);">${points.toLocaleString()}</span> <span style="color:var(--sd-grey-300);">points</span></div>
+            <span class="status-pill layaway">${tier.name} Tier</span>
+          </div>
+          <p style="color:var(--sd-grey-300);margin-top:8px;">${tier.perk}</p>
+          ${nextTier ? `
+            <div style="margin-top:14px;">
+              <div style="height:8px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;width:${progressPct}%;background:var(--sd-gold);"></div>
+              </div>
+              <div style="font-size:.78rem;color:var(--sd-grey-300);margin-top:6px;">${nextTier.min - points} points to ${nextTier.name}</div>
+            </div>
+          ` : `<div style="margin-top:14px;font-size:.85rem;color:var(--sd-gold);">You've reached the top tier!</div>`}
+        </div>
+
+        <h4 style="font-family:var(--font-display);letter-spacing:.04em;margin-bottom:10px;">Redeem Points</h4>
+        ${catalogHtml}
+
+        <h4 style="font-family:var(--font-display);letter-spacing:.04em;margin:20px 0 10px;">Points Activity</h4>
+        ${historyHtml}
+
+        <p style="color:var(--sd-grey-500);font-size:.78rem;margin-top:16px;">Earn 1 point for every $1 spent (${SD_POINTS_PER_DOLLAR === 1 ? "$100 = 100 points" : ""}). Points post automatically when you complete a standard checkout.</p>
+      `;
+
+      document.getElementById("rewardsMount").querySelectorAll("[data-redeem]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const result = sdRedeemReward(fresh.email, { points: Number(btn.dataset.redeem), label: btn.dataset.label });
+          if (result.ok) {
+            sdToast(`Redeemed: ${btn.dataset.label}! We'll email you to arrange shipping.`);
+            renderRewards();
+          } else {
+            sdToast(result.error);
+          }
+        });
+      });
+    }
+
     const nav = document.getElementById("accountNav");
     nav.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
@@ -173,9 +249,10 @@
       if (btn.dataset.panel === "logout") { sdLogout(); location.href = "index.html"; return; }
       nav.querySelectorAll("button").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      ["profile","orders","layaway"].forEach(p => {
+      ["profile","orders","layaway","rewards"].forEach(p => {
         document.getElementById(`panel-${p}`).style.display = p === btn.dataset.panel ? "block" : "none";
       });
+      if (btn.dataset.panel === "rewards") renderRewards();
     });
   } else if (session && session.guest) {
     document.getElementById("guestSection").style.display = "block";

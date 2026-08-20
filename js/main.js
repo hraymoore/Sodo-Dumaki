@@ -218,6 +218,7 @@ function sdRenderFooter() {
               <li><a href="careers.html">Careers</a></li>
               <li><a href="business.html">Business &amp; Bulk Orders</a></li>
               <li><a href="layaway.html">Layaway</a></li>
+              <li><a href="rewards.html">Sodo Rewards</a></li>
               <li><a href="account.html">My Account</a></li>
             </ul>
           </div>

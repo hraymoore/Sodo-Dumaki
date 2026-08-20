@@ -16,6 +16,7 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 | `cart.html` | Shopping cart |
 | `checkout.html` | Shipping info, then hands off to Square for payment (or emails a layaway request) |
 | `business.html` | Business account sign in/registration + bulk order request form (teams, schools, hotels, medical offices, staff uniforms, events — 100-piece minimum) |
+| `rewards.html` | Public Sodo Rewards explainer — earning rate, reward catalog, status tiers |
 
 ## Brand system
 
@@ -83,6 +84,16 @@ This is a manual step today (no backend to automate invoice creation), but it's 
 - **Payment**: same as retail — quote and invoice through Square. For the layaway option, use Square Invoices' Installments feature (see the Square section above) with the deposit/balance split the customer requested.
 
 **EIN and business address data is stored the same way as everything else in this prototype — in `localStorage`, per-browser, unencrypted.** This is fine for demoing the flow, but EIN numbers and business banking-adjacent info deserve a real backend with real security before you're collecting them from actual customers. Treat this the same as the accounts caveat below: fine to launch a v1 that emails you the request, not fine as a long-term store of sensitive business data.
+
+## Sodo Rewards (points program)
+
+A simple points program for consumer accounts, defined in `js/commerce.js`:
+
+- **Earning:** 1 point per $1 spent ($100 spent = 100 points). Points post automatically when a signed-in (non-guest, non-business) customer completes a standard checkout on `checkout.html` (`sdAwardPoints`) — guest checkouts don't earn points, which is called out on the confirmation screen as a reason to create an account.
+- **Redeeming:** `js/commerce.js` defines a `SD_REWARD_CATALOG` (Free Wristband Set → Free Signature Hoodie, 250–5,000 points) and `SD_REWARD_TIERS` (Rookie / All-Star / MVP, unlocked at 0 / 1,000 / 5,000 points with perks like early drop access and free shipping). Redeeming (`sdRedeemReward`) deducts points immediately and logs the redemption — there's no automatic fulfillment, so redemptions should be checked and shipped manually until there's a real backend.
+- **Where customers see it:** `account.html` has a "Sodo Rewards" panel (balance, tier, progress bar, redeem buttons, points activity) for consumer accounts, and `rewards.html` is the public marketing page explaining the program to people who haven't signed up yet.
+- **Adjusting the program:** change `SD_POINTS_PER_DOLLAR`, `SD_REWARD_CATALOG`, or `SD_REWARD_TIERS` at the top of `js/commerce.js` — every page that renders rewards content reads from those same constants, so there's one place to edit.
+- Like everything else in this prototype, point balances live in `localStorage` per-browser. Before launch, points need to move into whatever real backend/database ends up storing accounts (see below) so a customer's balance is the same on every device.
 
 ## Accounts & email storage
 

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sodo Rewards — Sodo Dumaki</title>
+<meta name="description" content="Earn points on every order and redeem them for free gear. 1 point per $1 spent." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Free To Join</span>
+    <h1>Sodo Rewards</h1>
+    <p>Earn points on every order, level up your tier, and redeem points for free gear — no catch, no expiration games.</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" style="text-align:center;">
+    <span class="eyebrow">How It Works</span>
+    <h2>Simple By Design</h2>
+    <div class="divider-gold" style="margin-left:auto;margin-right:auto;"></div>
+    <div class="stat-row" style="justify-content:center;">
+      <div class="stat"><div class="num">1 pt</div><div class="label">Per $1 Spent</div></div>
+      <div class="stat"><div class="num">100 pts</div><div class="label">Per $100 Spent</div></div>
+      <div class="stat"><div class="num">$0</div><div class="label">Cost To Join</div></div>
+    </div>
+    <p style="max-width:560px;margin:24px auto 0;color:var(--text-muted);">Create a free account, shop like normal, and points post automatically after checkout. Track your balance and redeem rewards any time from My Account.</p>
+    <a href="login.html?next=account.html" class="btn btn-gold" style="margin-top:20px;">Create Your Free Account</a>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <span class="eyebrow">Redeem Points</span>
+    <h2>Reward Catalog</h2>
+    <div class="divider-gold"></div>
+    <div class="grid-3" id="catalogGrid"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">Level Up</span>
+    <h2>Status Tiers</h2>
+    <div class="divider-gold"></div>
+    <div class="grid-3" id="tierGrid"></div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
+<script>
+  sdRenderHeader("rewards.html");
+  sdRenderFooter();
+
+  document.getElementById("catalogGrid").innerHTML = SD_REWARD_CATALOG.map((r) => `
+    <div class="value-card" style="text-align:center;">
+      <h3>${r.label}</h3>
+      <p style="color:var(--sd-gold);font-family:var(--font-display);font-size:1.4rem;letter-spacing:.04em;">${r.points.toLocaleString()} pts</p>
+    </div>
+  `).join("");
+
+  document.getElementById("tierGrid").innerHTML = SD_REWARD_TIERS.map((t) => `
+    <div class="value-card" style="text-align:center;">
+      <h3>${t.name}</h3>
+      <p style="color:var(--sd-grey-300);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">${t.min.toLocaleString()}+ points</p>
+      <p>${t.perk}</p>
+    </div>
+  `).join("");
+</script>
+</body>
+</html>

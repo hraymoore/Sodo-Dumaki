@@ -148,12 +148,33 @@ function sdGetTier(points) {
 }
 
 function sdAwardPoints(email, dollarAmount) {
-  if (!email) return;
+  if (!email || dollarAmount <= 0) return 0;
   const users = sdGetUsers();
   const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) return;
-  user.points = (user.points || 0) + Math.floor(dollarAmount * SD_POINTS_PER_DOLLAR);
+  if (!user) return 0;
+  const earned = Math.floor(dollarAmount * SD_POINTS_PER_DOLLAR);
+  user.points = (user.points || 0) + earned;
   sdSet(SD_KEYS.users, users);
+  sdRecordOrder({ type: "points-earned", email, total: dollarAmount, items: [], meta: { points: earned } });
+  return earned;
+}
+
+function sdRedeemReward(email, reward) {
+  const users = sdGetUsers();
+  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) return { ok: false, error: "Sign in to redeem rewards." };
+  const balance = user.points || 0;
+  if (balance < reward.points) return { ok: false, error: "Not enough points yet." };
+  user.points = balance - reward.points;
+  sdSet(SD_KEYS.users, users);
+  sdRecordOrder({ type: "points-redeemed", email, total: 0, items: [reward.label], meta: { points: -reward.points } });
+  return { ok: true, remaining: user.points };
+}
+
+function sdPointsHistory(email) {
+  return sdGetOrders()
+    .filter((o) => (o.type === "points-earned" || o.type === "points-redeemed") && o.email.toLowerCase() === email.toLowerCase())
+    .reverse();
 }
 
 /* ---------------- business accounts ---------------- */
