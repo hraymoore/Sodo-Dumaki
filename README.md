@@ -17,6 +17,7 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 | `checkout.html` | Shipping info, then hands off to Square for payment (or emails a layaway request) |
 | `business.html` | Business account sign in/registration + bulk order request form (teams, schools, hotels, medical offices, staff uniforms, events — 100-piece minimum) |
 | `rewards.html` | Public Sodo Rewards explainer — earning rate, reward catalog, status tiers |
+| `analytics.html` | Internal sales dashboard — orders/revenue by state and city (soft-gated, not linked from the public nav) |
 
 ## Brand system
 
@@ -29,7 +30,7 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 
 - `js/main.js` injects the shared header/footer into every page's `#site-header` / `#site-footer` divs, handles the mobile nav toggle, cart badge, toasts, and the "add to cart" buttons.
 - `js/products-data.js` holds the product catalog (id, name, category, price, image, badge, `squareLink`) — this is the single source of truth for products shown on the home page, `products.html`, and the layaway calculator.
-- `js/commerce.js` holds everything business/bulk-order specific: the sports/apparel/state/size-grid data and HTML helpers, business account signup, the order log (`sdRecordOrder`/`sdGetOrders`), and the shared bulk order form renderer used by `business.html` and the business account portal.
+- `js/commerce.js` holds everything business/bulk-order specific: the sports/apparel/state/size-grid data and HTML helpers, business account signup, the order log (`sdRecordOrder`/`sdGetOrders`), analytics aggregation (`sdAnalyticsSummary`/`sdAnalyticsByRegion`), the Rewards points functions, and the shared bulk order form renderer used by `business.html` and the business account portal. `checkout.html` also calls into it now, both to log retail orders (for analytics) and to award Rewards points.
 - Cart, accounts, and the newsletter/email list are stored in the browser's `localStorage` so the whole flow (browse → cart → login/guest → checkout) works end-to-end for demos and review.
 
 ## Connecting real payments: Square
@@ -94,6 +95,21 @@ A simple points program for consumer accounts, defined in `js/commerce.js`:
 - **Where customers see it:** `account.html` has a "Sodo Rewards" panel (balance, tier, progress bar, redeem buttons, points activity) for consumer accounts, and `rewards.html` is the public marketing page explaining the program to people who haven't signed up yet.
 - **Adjusting the program:** change `SD_POINTS_PER_DOLLAR`, `SD_REWARD_CATALOG`, or `SD_REWARD_TIERS` at the top of `js/commerce.js` — every page that renders rewards content reads from those same constants, so there's one place to edit.
 - Like everything else in this prototype, point balances live in `localStorage` per-browser. Before launch, points need to move into whatever real backend/database ends up storing accounts (see below) so a customer's balance is the same on every device.
+
+## Sales analytics dashboard
+
+`analytics.html` shows order volume and revenue broken down **by state and by city**, plus a recent-activity feed — for both retail orders (`checkout.html`) and business bulk requests (`business.html`). It's deliberately **not linked from the public nav or footer** — it's a staff tool, not a customer-facing page.
+
+- **State capture:** `checkout.html` now collects a **State** field (it previously only asked for city/ZIP) so retail orders carry real state/city data, the same way business bulk requests already did.
+- **Access:** a simple access-code prompt (`analytics.html`, code defaults to `sododumaki-staff` — change it directly in the page's `<script>` before sharing this site). **This is a soft deterrent, not real security** — anyone who reads the page source can see the code. It stops a customer from stumbling onto the page; it does not stop someone who wants in. Don't rely on it once this dashboard shows real customer data — put it behind real authentication first (see below).
+- **What it shows:** total retail revenue/orders, business bulk requests/pieces, unique customers, Rewards points issued, and state/city tables sorted by activity — all computed live from `sdGetOrders()` in `js/commerce.js` (`sdAnalyticsSummary`, `sdAnalyticsByRegion`).
+- **"Load Sample Data"** button seeds ~60 realistic fake orders across a spread of US cities so the dashboard isn't empty before you have real traffic — clearly separate from real recorded data, and removable any time with **"Clear All Recorded Data."**
+
+**The honest limitation, stated plainly (also shown on the page itself):** this dashboard only aggregates orders placed **in the browser you're viewing it from** — there is no shared database, so it will never show your true, complete sales picture across all customers and devices. Once real payments are running through Square:
+
+- **Square Dashboard → Reports** already breaks down real sales by customer and location — no extra work needed.
+- **Google Analytics or Meta Pixel** shows where your site *traffic* comes from geographically (including visitors who don't buy), which this dashboard can't do at all.
+- If you want *this exact dashboard* to show real, cross-device numbers, that requires a real backend + database recording every order server-side, and real authentication (not the access-code prompt) gating who can view it.
 
 ## Accounts & email storage
 

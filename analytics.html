@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Analytics — Sodo Dumaki</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Internal Tool — Not For Customers</span>
+    <h1>Sales Analytics</h1>
+    <p>Order volume and revenue by state and city, from data recorded in this browser.</p>
+  </div>
+</div>
+
+<section class="section" id="gateSection">
+  <div class="container">
+    <div class="form-card">
+      <h2 style="text-align:center;font-size:1.4rem;">Staff Access</h2>
+      <p style="text-align:center;color:var(--sd-grey-500);margin-bottom:20px;">This is a soft deterrent, not real security — see the warning banner below once you're in.</p>
+      <div class="field"><label for="gateCode">Access Code</label><input type="password" id="gateCode" placeholder="Ask the site owner" /></div>
+      <button class="btn btn-primary btn-block" id="gateSubmit">Enter</button>
+      <div class="form-alert" id="gateAlert"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="dashSection" style="display:none;">
+  <div class="container">
+    <div class="value-card" style="border-top-color:#b3261e;margin-bottom:32px;">
+      <h3 style="color:#f2a19c;">Read Before You Rely On This</h3>
+      <p style="color:var(--sd-grey-300);">This dashboard only reflects orders and bulk requests submitted <strong>in this browser</strong> — there's no shared database yet, so it will not show your real, full customer activity across all devices/browsers. For real analytics once the site is live:</p>
+      <ul style="color:var(--sd-grey-300);padding-left:20px;list-style:disc;margin-top:8px;">
+        <li>Square Dashboard → Reports already breaks down sales by customer and location once payments run through Square.</li>
+        <li>Google Analytics (or Meta Pixel) shows where your site <em>traffic</em> comes from geographically, including visitors who don't buy.</li>
+        <li>A real backend + database is what would let this exact dashboard show truthful, cross-device numbers — see README.md.</li>
+      </ul>
+    </div>
+
+    <div class="stat-row" id="summaryStats" style="margin-bottom:8px;"></div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:24px 0 40px;">
+      <button class="btn btn-outline-light btn-sm" id="seedBtn">Load Sample Data (Demo)</button>
+      <button class="btn btn-outline-light btn-sm" id="clearBtn">Clear All Recorded Data</button>
+    </div>
+
+    <div class="grid-2" style="align-items:start;gap:32px;">
+      <div>
+        <span class="eyebrow">By State</span>
+        <h2 style="font-size:1.6rem;">Orders &amp; Revenue By State</h2>
+        <div class="divider-gold"></div>
+        <div style="overflow-x:auto;">
+          <table class="cart-table" id="stateTable"></table>
+        </div>
+      </div>
+      <div>
+        <span class="eyebrow">By City</span>
+        <h2 style="font-size:1.6rem;">Orders &amp; Revenue By City</h2>
+        <div class="divider-gold"></div>
+        <div style="overflow-x:auto;">
+          <table class="cart-table" id="cityTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px;">
+      <span class="eyebrow">Activity Log</span>
+      <h2 style="font-size:1.6rem;">Recent Orders &amp; Requests</h2>
+      <div class="divider-gold"></div>
+      <div id="activityList"></div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
+<script>
+  sdRenderHeader("");
+  sdRenderFooter();
+
+  const ACCESS_CODE = "sododumaki-staff";
+  const gateSection = document.getElementById("gateSection");
+  const dashSection = document.getElementById("dashSection");
+
+  function unlock() {
+    gateSection.style.display = "none";
+    dashSection.style.display = "block";
+    renderDashboard();
+  }
+
+  if (sessionStorage.getItem("sdAnalyticsUnlocked") === "1") unlock();
+
+  document.getElementById("gateSubmit").addEventListener("click", () => {
+    const code = document.getElementById("gateCode").value;
+    if (code === ACCESS_CODE) {
+      sessionStorage.setItem("sdAnalyticsUnlocked", "1");
+      unlock();
+    } else {
+      const el = document.getElementById("gateAlert");
+      el.textContent = "Incorrect code.";
+      el.className = "form-alert show error";
+    }
+  });
+
+  function regionTableHtml(rows, labelHeader) {
+    if (rows.length === 0) return `<tbody><tr><td style="padding:16px 8px;color:var(--text-muted);">No data yet.</td></tr></tbody>`;
+    return `
+      <thead><tr><th>${labelHeader}</th><th>Retail Orders</th><th>Retail Revenue</th><th>Bulk Requests</th><th>Bulk Pieces</th></tr></thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${r.key}</td>
+            <td>${r.retailOrders}</td>
+            <td>${sdFormatPrice(r.retailRevenue)}</td>
+            <td>${r.businessRequests}</td>
+            <td>${r.bulkPieces}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    `;
+  }
+
+  function renderDashboard() {
+    const s = sdAnalyticsSummary();
+    document.getElementById("summaryStats").innerHTML = `
+      <div class="stat"><div class="num">${sdFormatPrice(s.retailRevenue)}</div><div class="label">Retail Revenue</div></div>
+      <div class="stat"><div class="num">${s.retailOrders}</div><div class="label">Retail Orders</div></div>
+      <div class="stat"><div class="num">${s.businessRequests}</div><div class="label">Bulk Requests</div></div>
+      <div class="stat"><div class="num">${s.bulkPieces.toLocaleString()}</div><div class="label">Bulk Pieces Requested</div></div>
+      <div class="stat"><div class="num">${s.uniqueCustomers}</div><div class="label">Unique Customers</div></div>
+      <div class="stat"><div class="num">${s.pointsEarned.toLocaleString()}</div><div class="label">Rewards Points Issued</div></div>
+    `;
+
+    document.getElementById("stateTable").innerHTML = regionTableHtml(sdAnalyticsByRegion("state"), "State");
+    document.getElementById("cityTable").innerHTML = regionTableHtml(sdAnalyticsByRegion("city"), "City");
+
+    const recent = sdGetOrders()
+      .filter(o => o.type === "retail" || o.type === "business")
+      .slice()
+      .reverse()
+      .slice(0, 25);
+
+    document.getElementById("activityList").innerHTML = recent.length === 0
+      ? `<p style="color:var(--text-muted);">No orders or requests recorded yet.</p>`
+      : recent.map(o => `
+        <div class="order-row">
+          <div>
+            <strong>${o.type === "business" ? (o.meta.orgName || "Business Request") : "Retail Order"}</strong>
+            <div style="color:var(--text-muted);font-size:.85rem;">
+              ${new Date(o.date).toLocaleDateString()} &middot; ${o.email} &middot; ${o.city ? `${o.city}, ` : ""}${o.state || "—"}
+            </div>
+          </div>
+          <span class="status-pill ${o.type === "business" ? "layaway" : "paid"}">
+            ${o.type === "business" ? `${o.meta.sizeTotal || 0} pieces` : sdFormatPrice(o.total || 0)}
+          </span>
+        </div>
+      `).join("");
+  }
+
+  document.getElementById("seedBtn").addEventListener("click", () => {
+    sdSeedSampleOrders(60);
+    renderDashboard();
+    sdToast("Sample data loaded");
+  });
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    if (confirm("Clear all recorded orders, bulk requests, and points activity from this browser? This cannot be undone.")) {
+      sdClearOrders();
+      renderDashboard();
+      sdToast("All recorded data cleared");
+    }
+  });
+</script>
+</body>
+</html>

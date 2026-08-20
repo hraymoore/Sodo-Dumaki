@@ -34,8 +34,9 @@
           <div class="field"><label for="ckLast">Last Name</label><input type="text" id="ckLast" required /></div>
         </div>
         <div class="field"><label for="ckAddress">Shipping Address</label><input type="text" id="ckAddress" required /></div>
-        <div class="grid-2" style="gap:16px;">
+        <div class="grid-3-addr">
           <div class="field"><label for="ckCity">City</label><input type="text" id="ckCity" required /></div>
+          <div class="field"><label for="ckState">State</label><div id="ckStateMount"></div></div>
           <div class="field"><label for="ckZip">ZIP Code</label><input type="text" id="ckZip" required /></div>
         </div>
         <div class="field">
@@ -72,6 +73,8 @@
   const params = new URLSearchParams(location.search);
   const layawayCheckbox = document.getElementById("ckLayaway");
   if (params.get("mode") === "layaway") layawayCheckbox.checked = true;
+
+  document.getElementById("ckStateMount").innerHTML = sdStateSelectHtml("ckState");
 
   const user = sdCurrentUser();
   const session = sdCurrentSession();
@@ -125,8 +128,11 @@
     const last = document.getElementById("ckLast").value.trim();
     const address = document.getElementById("ckAddress").value.trim();
     const city = document.getElementById("ckCity").value.trim();
+    const state = document.getElementById("ckState").value;
     const zip = document.getElementById("ckZip").value.trim();
     sdSubscribeNewsletter(email);
+
+    const orderItems = lines.map(l => `${l.qty} x ${l.product.name}`);
 
     const subtotal = sdCartSubtotal();
     const shipping = subtotal >= 100 ? 0 : 8;
@@ -160,6 +166,8 @@
       const mailLink = `mailto:layaway@sododumaki.com?subject=${encodeURIComponent("Layaway Request — " + first + " " + last)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
 
       actionsEl.innerHTML = `<a class="btn btn-gold" href="${mailLink}">Email My Layaway Request</a>`;
+
+      sdRecordOrder({ type: "retail", email, state, city, zip, total, items: orderItems, meta: { paymentType: "layaway-request" } });
     } else {
       document.getElementById("confirmEyebrow").textContent = "Almost There";
       document.getElementById("confirmHeading").textContent = "Complete Your Payment";
@@ -182,6 +190,8 @@
           ? `<a class="btn btn-gold" href="${l.product.squareLink}" target="_blank" rel="noopener">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Square</a>`
           : `<button class="btn btn-gold" disabled title="Square payment link not connected yet">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Coming Soon</button>`;
       }).join("");
+
+      sdRecordOrder({ type: "retail", email, state, city, zip, total, items: orderItems, meta: { paymentType: "full" } });
     }
 
     sdSaveCart([]);

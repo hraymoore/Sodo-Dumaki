@@ -126,6 +126,77 @@ function sdRecordOrder(order) {
   return order;
 }
 
+function sdClearOrders() { sdSet(SD_ORDERS_KEY, []); }
+
+const SD_SAMPLE_CITIES = [
+  ["Seattle", "WA"], ["Tacoma", "WA"], ["Portland", "OR"], ["Los Angeles", "CA"],
+  ["San Diego", "CA"], ["Phoenix", "AZ"], ["Denver", "CO"], ["Austin", "TX"],
+  ["Dallas", "TX"], ["Chicago", "IL"], ["Atlanta", "GA"], ["Miami", "FL"],
+  ["New York", "NY"], ["Boston", "MA"], ["Nashville", "TN"], ["Kansas City", "KS"],
+];
+
+function sdSeedSampleOrders(count = 60) {
+  const orders = sdGetOrders();
+  const now = Date.now();
+  for (let i = 0; i < count; i++) {
+    const [city, state] = SD_SAMPLE_CITIES[Math.floor(Math.random() * SD_SAMPLE_CITIES.length)];
+    const isBusiness = Math.random() < 0.25;
+    const daysAgo = Math.floor(Math.random() * 90);
+    const date = new Date(now - daysAgo * 86400000).toISOString();
+    if (isBusiness) {
+      const pieces = 100 + Math.floor(Math.random() * 300);
+      orders.push({
+        id: "sample_" + i + "_" + Math.random().toString(36).slice(2, 6),
+        date, type: "business",
+        email: `contact${i}@sample-org.com`,
+        state, city, zip: "00000", total: null,
+        items: ["Game Uniforms"],
+        meta: { orgName: `Sample Org ${i}`, purpose: "program", sizeTotal: pieces, payment: Math.random() < 0.3 ? "layaway" : "full" },
+      });
+    } else {
+      const total = Math.round((30 + Math.random() * 220) * 100) / 100;
+      orders.push({
+        id: "sample_" + i + "_" + Math.random().toString(36).slice(2, 6),
+        date, type: "retail",
+        email: `customer${i}@example.com`,
+        state, city, zip: "00000", total,
+        items: ["Sample Item"],
+        meta: { paymentType: "full" },
+      });
+    }
+  }
+  sdSet(SD_ORDERS_KEY, orders);
+}
+
+function sdAnalyticsSummary() {
+  const orders = sdGetOrders();
+  const retail = orders.filter((o) => o.type === "retail");
+  const business = orders.filter((o) => o.type === "business");
+  const pointsEarned = orders.filter((o) => o.type === "points-earned").reduce((s, o) => s + (o.meta.points || 0), 0);
+  const pointsRedeemed = orders.filter((o) => o.type === "points-redeemed").reduce((s, o) => s - (o.meta.points || 0), 0);
+  return {
+    retailOrders: retail.length,
+    retailRevenue: retail.reduce((s, o) => s + (o.total || 0), 0),
+    businessRequests: business.length,
+    bulkPieces: business.reduce((s, o) => s + (o.meta.sizeTotal || 0), 0),
+    uniqueCustomers: new Set(orders.filter((o) => o.type === "retail" || o.type === "business").map((o) => o.email.toLowerCase())).size,
+    pointsEarned, pointsRedeemed,
+  };
+}
+
+function sdAnalyticsByRegion(field) {
+  const orders = sdGetOrders().filter((o) => o.type === "retail" || o.type === "business");
+  const map = new Map();
+  orders.forEach((o) => {
+    const key = o[field] || "(unknown)";
+    if (!map.has(key)) map.set(key, { key, retailOrders: 0, retailRevenue: 0, businessRequests: 0, bulkPieces: 0 });
+    const row = map.get(key);
+    if (o.type === "retail") { row.retailOrders++; row.retailRevenue += o.total || 0; }
+    else { row.businessRequests++; row.bulkPieces += o.meta.sizeTotal || 0; }
+  });
+  return Array.from(map.values()).sort((a, b) => (b.retailRevenue + b.bulkPieces * 10) - (a.retailRevenue + a.bulkPieces * 10));
+}
+
 /* ---------------- Sodo Rewards points ---------------- */
 const SD_POINTS_PER_DOLLAR = 1; // $1 spent = 1 point ($100 spent = 100 points)
 
