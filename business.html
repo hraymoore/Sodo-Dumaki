@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Business &amp; Bulk Orders — Sodo Dumaki</title>
+<meta name="description" content="Bulk uniforms and custom apparel for teams, schools, businesses, and events. 100-piece minimum. Layaway available for business accounts." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Teams &middot; Schools &middot; Businesses &middot; Events</span>
+    <h1>Sodo Dumaki For Business</h1>
+    <p>Custom uniforms, staff apparel, and bulk gear from the same catalog we sell to everyone else — sized, sourced, and shipped for your whole roster. 100-piece minimum per bulk order.</p>
+  </div>
+</div>
+
+<div class="trust-strip">
+  <div class="item">🏆 Custom Uniforms &amp; Logos</div>
+  <div class="item">📦 100-Piece Minimum</div>
+  <div class="item">🧾 EIN &amp; Tax-Exempt Friendly</div>
+  <div class="item">💳 Layaway For Business Accounts</div>
+</div>
+
+<section class="section" id="authSection">
+  <div class="container">
+    <div class="filter-tabs" id="bizAuthTabs" style="justify-content:center;">
+      <button data-tab="signin" class="active">Business Sign In</button>
+      <button data-tab="register">Register Your Business</button>
+    </div>
+
+    <div class="form-card" id="bizSignInPanel">
+      <h2 style="text-align:center;font-size:1.5rem;">Business Sign In</h2>
+      <p style="text-align:center;color:var(--sd-grey-500);margin-bottom:20px;">Sign in to prefill your info and track past requests.</p>
+      <div class="form-alert" id="signInAlert"></div>
+      <form id="bizSignInForm">
+        <div class="field"><label for="siEmail">Business Email</label><input type="email" id="siEmail" required /></div>
+        <div class="field"><label for="siPassword">Password</label><input type="password" id="siPassword" required /></div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+    </div>
+
+    <div class="form-card" id="bizRegisterPanel" style="display:none;max-width:640px;">
+      <h2 style="text-align:center;font-size:1.5rem;">Register Your Business</h2>
+      <p style="text-align:center;color:var(--sd-grey-500);margin-bottom:20px;">Save your business info, track requests, and unlock layaway for bulk orders.</p>
+      <div class="form-alert" id="registerAlert"></div>
+      <form id="bizRegisterForm">
+        <div class="field"><label for="rBusinessName">Business / Organization Name</label><input type="text" id="rBusinessName" required /></div>
+        <div class="grid-2" style="gap:16px;">
+          <div class="field">
+            <label for="rBusinessType">Business Type</label>
+            <select id="rBusinessType"></select>
+          </div>
+          <div class="field"><label for="rEin">EIN (Employer ID Number)</label><input type="text" id="rEin" placeholder="XX-XXXXXXX" /></div>
+        </div>
+        <div class="grid-2" style="gap:16px;">
+          <div class="field"><label for="rContactName">Contact Name</label><input type="text" id="rContactName" required /></div>
+          <div class="field"><label for="rPhone">Phone</label><input type="tel" id="rPhone" required /></div>
+        </div>
+        <div class="field"><label for="rEmail">Business Email</label><input type="email" id="rEmail" required /></div>
+        <div class="field"><label for="rAddress">Business Address</label><input type="text" id="rAddress" required /></div>
+        <div class="grid-3-addr">
+          <div class="field"><label for="rCity">City</label><input type="text" id="rCity" required /></div>
+          <div class="field" id="rStateField"><label for="rStateSel">State</label></div>
+          <div class="field"><label for="rZip">ZIP Code</label><input type="text" id="rZip" required /></div>
+        </div>
+        <div class="field"><label for="rPassword">Password</label><input type="password" id="rPassword" required minlength="6" /></div>
+        <button type="submit" class="btn btn-primary btn-block">Create Business Account</button>
+      </form>
+    </div>
+
+    <p style="text-align:center;color:var(--text-muted);margin-top:24px;">Not ready to create an account? No problem — scroll down and submit a bulk order request as a guest.</p>
+  </div>
+</section>
+
+<section class="section section--alt" id="welcomeBackSection" style="display:none;">
+  <div class="container" style="text-align:center;">
+    <span class="eyebrow">Welcome Back</span>
+    <h2 id="welcomeHeading"></h2>
+    <p>Your info is prefilled below. Head to <a href="account.html" style="color:var(--sd-gold);font-weight:600;">My Account</a> to see your past requests.</p>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <span class="eyebrow">Request A Bulk Quote</span>
+    <h2>Tell Us What You Need</h2>
+    <div class="divider-gold"></div>
+    <div class="form-card" style="max-width:760px;" id="bulkFormMount"></div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="js/products-data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
+<script>
+  sdRenderHeader("business.html");
+  sdRenderFooter();
+
+  document.getElementById("rBusinessType").innerHTML = SD_BUSINESS_TYPES.map((t) => `<option value="${t}">${t}</option>`).join("");
+  document.getElementById("rStateField").insertAdjacentHTML("beforeend", sdStateSelectHtml("rStateSel"));
+
+  const user = sdCurrentUser();
+  const authSection = document.getElementById("authSection");
+  const welcomeSection = document.getElementById("welcomeBackSection");
+
+  let prefill = {};
+  if (user && user.isBusiness) {
+    authSection.style.display = "none";
+    welcomeSection.style.display = "block";
+    document.getElementById("welcomeHeading").textContent = `Welcome back, ${user.businessName}`;
+    prefill = user;
+  } else if (user) {
+    prefill = { name: user.name, email: user.email };
+  }
+
+  sdRenderBulkOrderForm("bulkFormMount", prefill);
+
+  // auth tabs
+  const tabsEl = document.getElementById("bizAuthTabs");
+  const signInPanel = document.getElementById("bizSignInPanel");
+  const registerPanel = document.getElementById("bizRegisterPanel");
+  tabsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    tabsEl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
+    signInPanel.style.display = btn.dataset.tab === "signin" ? "block" : "none";
+    registerPanel.style.display = btn.dataset.tab === "register" ? "block" : "none";
+  });
+
+  function alertBox(el, message, type) {
+    el.textContent = message;
+    el.className = `form-alert show ${type}`;
+  }
+
+  document.getElementById("bizSignInForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("siEmail").value.trim();
+    const password = document.getElementById("siPassword").value;
+    const result = sdLogin(email, password);
+    const alertEl = document.getElementById("signInAlert");
+    if (result.ok) {
+      const u = sdCurrentUser();
+      if (!u.isBusiness) { alertBox(alertEl, "This email is registered as a consumer account, not a business account.", "error"); sdLogout(); return; }
+      alertBox(alertEl, "Signed in — reloading...", "success");
+      setTimeout(() => location.reload(), 500);
+    } else {
+      alertBox(alertEl, result.error, "error");
+    }
+  });
+
+  document.getElementById("bizRegisterForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fields = {
+      businessName: document.getElementById("rBusinessName").value.trim(),
+      businessType: document.getElementById("rBusinessType").value,
+      ein: document.getElementById("rEin").value.trim(),
+      contactName: document.getElementById("rContactName").value.trim(),
+      phone: document.getElementById("rPhone").value.trim(),
+      email: document.getElementById("rEmail").value.trim(),
+      address: document.getElementById("rAddress").value.trim(),
+      city: document.getElementById("rCity").value.trim(),
+      state: document.getElementById("rStateSel").value,
+      zip: document.getElementById("rZip").value.trim(),
+      password: document.getElementById("rPassword").value,
+    };
+    const result = sdSignupBusiness(fields);
+    const alertEl = document.getElementById("registerAlert");
+    if (result.ok) {
+      alertBox(alertEl, "Business account created — reloading...", "success");
+      setTimeout(() => location.reload(), 500);
+    } else {
+      alertBox(alertEl, result.error, "error");
+    }
+  });
+</script>
+</body>
+</html>

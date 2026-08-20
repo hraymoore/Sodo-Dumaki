@@ -15,6 +15,7 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 | `account.html` | Account portal — profile, order history, layaway plan status |
 | `cart.html` | Shopping cart |
 | `checkout.html` | Shipping info, then hands off to Square for payment (or emails a layaway request) |
+| `business.html` | Business account sign in/registration + bulk order request form (teams, schools, hotels, medical offices, staff uniforms, events — 100-piece minimum) |
 
 ## Brand system
 
@@ -27,6 +28,7 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 
 - `js/main.js` injects the shared header/footer into every page's `#site-header` / `#site-footer` divs, handles the mobile nav toggle, cart badge, toasts, and the "add to cart" buttons.
 - `js/products-data.js` holds the product catalog (id, name, category, price, image, badge, `squareLink`) — this is the single source of truth for products shown on the home page, `products.html`, and the layaway calculator.
+- `js/commerce.js` holds everything business/bulk-order specific: the sports/apparel/state/size-grid data and HTML helpers, business account signup, the order log (`sdRecordOrder`/`sdGetOrders`), and the shared bulk order form renderer used by `business.html` and the business account portal.
 - Cart, accounts, and the newsletter/email list are stored in the browser's `localStorage` so the whole flow (browse → cart → login/guest → checkout) works end-to-end for demos and review.
 
 ## Connecting real payments: Square
@@ -64,6 +66,23 @@ The flow as built:
 3. Square emails the customer a secure invoice; they pay the deposit online, and you get paid the balance the same way once the order's ready to ship.
 
 This is a manual step today (no backend to automate invoice creation), but it's fast, and it's real Square functionality — not a workaround.
+
+## Business & bulk orders
+
+`business.html` is a separate track for B2B customers — teams, schools, hotels, medical offices, airports, restaurants, event/race organizers, or any organization that needs uniforms or bulk apparel — kept apart from the regular consumer shop so retail customers never see it and business customers get a form built for what they actually need.
+
+- **Business accounts** register with business name, business type, EIN, contact info, and address (`sdSignupBusiness` in `js/commerce.js`) — stored in the same `sdUsers` localStorage array as consumer accounts, flagged `isBusiness: true`. When a business account signs in and visits `account.html`, they see a completely different portal (Business Profile / New Bulk Request / My Requests) instead of the consumer Profile/Orders/Layaway panels — same page, different render branch based on `user.isBusiness`.
+- **The bulk order form** (`sdRenderBulkOrderForm` in `js/commerce.js`, used on both `business.html` and the business account portal) covers:
+  - **Purpose**: Team/Sports Program, Staff/Work Uniform Program (hotels, medical, airports, restaurants, etc.), or a One-Time Event — each reveals the relevant fields (sport checklist, or event name/date).
+  - Business info, EIN, delivery address (with state, for order-geography records).
+  - Apparel/uniform types needed, team colors/design notes, and a size-quantity grid (youth/adult) with a **live 100-piece minimum check**.
+  - A checkbox to **also bulk order anything from the regular consumer catalog** (every product in `js/products-data.js`, with quantity fields) — so a business can order custom uniforms and standard catalog items in the same request.
+  - File pickers for logo/design files and **existing uniform photos** (so a business replacing or refreshing a current uniform can show what they have now). Browsers can't attach files to a `mailto:` link automatically, so the form reminds the requester to attach them to the email before sending.
+  - **Payment preference: pay in full, or layaway (60% now / 40% at completion).** Layaway is only offered here — the regular consumer `checkout.html` is untouched and does not offer it. This matches the business's policy that layaway is for business/bulk custom orders, not everyday retail purchases.
+- **Submitting** the form saves the request locally (`sdRecordOrder`, so a business can see "My Requests" in their portal) and opens a pre-filled `mailto:business@sododumaki.com` with the complete order spec for your team to quote and fulfill manually.
+- **Payment**: same as retail — quote and invoice through Square. For the layaway option, use Square Invoices' Installments feature (see the Square section above) with the deposit/balance split the customer requested.
+
+**EIN and business address data is stored the same way as everything else in this prototype — in `localStorage`, per-browser, unencrypted.** This is fine for demoing the flow, but EIN numbers and business banking-adjacent info deserve a real backend with real security before you're collecting them from actual customers. Treat this the same as the accounts caveat below: fine to launch a v1 that emails you the request, not fine as a long-term store of sensitive business data.
 
 ## Accounts & email storage
 

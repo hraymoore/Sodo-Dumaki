@@ -134,6 +134,7 @@ function sdRenderHeader(activePage) {
   const links = [
     ["index.html", "Home"],
     ["products.html", "Shop"],
+    ["business.html", "Business"],
     ["layaway.html", "Layaway"],
     ["about.html", "About"],
     ["careers.html", "Careers"],
@@ -215,6 +216,7 @@ function sdRenderFooter() {
             <ul>
               <li><a href="about.html">Our Story</a></li>
               <li><a href="careers.html">Careers</a></li>
+              <li><a href="business.html">Business &amp; Bulk Orders</a></li>
               <li><a href="layaway.html">Layaway</a></li>
               <li><a href="account.html">My Account</a></li>
             </ul>

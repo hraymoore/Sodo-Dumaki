@@ -54,6 +54,33 @@
   </div>
 </section>
 
+<section class="section" id="bizAccountSection" style="display:none;">
+  <div class="container account-grid">
+    <div class="account-nav" id="bizAccountNav">
+      <button data-panel="bizProfile" class="active">Business Profile</button>
+      <button data-panel="bizNewRequest">New Bulk Request</button>
+      <button data-panel="bizRequests">My Requests</button>
+      <button data-panel="logout">Sign Out</button>
+    </div>
+
+    <div class="account-panel">
+      <div id="panel-bizProfile">
+        <h3>Business Profile</h3>
+        <div id="bizProfileDetail"></div>
+        <p style="color:var(--sd-grey-500);font-size:.85rem;margin-top:16px;">This is a prototype account view — your business info is stored locally in this browser for demo purposes, not a production database.</p>
+      </div>
+      <div id="panel-bizNewRequest" style="display:none;">
+        <h3>New Bulk Order Request</h3>
+        <div id="bizFormMount" style="margin-top:16px;"></div>
+      </div>
+      <div id="panel-bizRequests" style="display:none;">
+        <h3>My Requests</h3>
+        <div id="bizRequestList"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="section" id="guestSection" style="display:none;">
   <div class="container" style="text-align:center;">
     <h2>You're Shopping As A Guest</h2>
@@ -77,6 +104,7 @@
 
 <script src="js/products-data.js"></script>
 <script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
 <script>
   sdRenderHeader("account.html");
   sdRenderFooter();
@@ -84,7 +112,56 @@
   const session = sdCurrentSession();
   const user = sdCurrentUser();
 
-  if (user) {
+  if (user && user.isBusiness) {
+    document.getElementById("bizAccountSection").style.display = "block";
+    document.getElementById("accountEyebrow").textContent = "Business Portal";
+    document.getElementById("accountHeading").textContent = `Welcome, ${user.businessName}`;
+
+    document.getElementById("bizProfileDetail").innerHTML = `
+      <div class="order-row"><span>Contact</span><strong>${user.name}</strong></div>
+      <div class="order-row"><span>Business Email</span><strong>${user.email}</strong></div>
+      <div class="order-row"><span>Phone</span><strong>${user.phone || "—"}</strong></div>
+      <div class="order-row"><span>Business Type</span><strong>${user.businessType || "—"}</strong></div>
+      <div class="order-row"><span>EIN</span><strong>${user.ein || "Not provided"}</strong></div>
+      <div class="order-row"><span>Address</span><strong>${user.address ? `${user.address}, ${user.city}, ${user.state} ${user.zip}` : "—"}</strong></div>
+    `;
+
+    sdRenderBulkOrderForm("bizFormMount", user);
+
+    function renderBizRequests() {
+      const mine = sdGetOrders().filter((o) => o.type === "business" && o.email === user.email);
+      const listEl = document.getElementById("bizRequestList");
+      if (mine.length === 0) {
+        listEl.innerHTML = `<p style="color:var(--sd-grey-500);">No bulk requests submitted yet — use "New Bulk Request" to send your first one.</p>`;
+        return;
+      }
+      listEl.innerHTML = mine.slice().reverse().map((o) => `
+        <div class="order-row">
+          <div>
+            <strong>${o.meta.orgName}</strong>
+            <div style="color:var(--sd-grey-500);font-size:.85rem;">
+              ${new Date(o.date).toLocaleDateString()} &middot; ${o.meta.purpose === "event" ? (o.meta.eventName || "Event") : o.meta.purpose === "staff" ? "Staff / Work Uniforms" : (o.meta.sports || []).join(", ") || "Team Program"} &middot; ${o.meta.sizeTotal || 0} custom pieces
+            </div>
+          </div>
+          <span class="status-pill layaway">${o.meta.payment === "layaway" ? "Layaway Requested" : "Full Payment"}</span>
+        </div>
+      `).join("");
+    }
+    renderBizRequests();
+
+    const nav = document.getElementById("bizAccountNav");
+    nav.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.dataset.panel === "logout") { sdLogout(); location.href = "index.html"; return; }
+      nav.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      ["bizProfile","bizNewRequest","bizRequests"].forEach(p => {
+        document.getElementById(`panel-${p}`).style.display = p === btn.dataset.panel ? "block" : "none";
+      });
+      if (btn.dataset.panel === "bizRequests") renderBizRequests();
+    });
+  } else if (user) {
     document.getElementById("accountSection").style.display = "block";
     document.getElementById("accountHeading").textContent = `Welcome, ${user.name.split(" ")[0]}`;
     document.getElementById("profileEmail").textContent = user.email;
