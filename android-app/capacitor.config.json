@@ -1,0 +1,20 @@
+{
+  "appId": "com.sododumaki.app",
+  "appName": "Sodo Dumaki",
+  "webDir": "www",
+  "server": {
+    "url": "https://www.sododumaki.com",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#0B0B0D"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#0B0B0D",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    }
+  }
+}
