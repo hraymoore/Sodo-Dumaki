@@ -147,7 +147,7 @@ function sdRenderHeader(activePage) {
     <div class="announce-bar">Free shipping on orders over <strong>$100</strong> &middot; New season drop is live</div>
     <div class="navbar">
       <a href="index.html" class="brand">
-        <img src="assets/logo.svg" alt="Sodo Dumaki logo" width="38" height="38" />
+        <img src="assets/logo-icon.png" alt="Sodo Dumaki logo" />
         <span class="brand-word">SODO <span>DUMAKI</span></span>
       </a>
       <nav class="nav-links" id="navLinks">${navHtml}</nav>
@@ -192,7 +192,7 @@ function sdRenderFooter() {
         <div class="footer-grid">
           <div>
             <a href="index.html" class="brand" style="margin-bottom:14px;">
-              <img src="assets/logo.svg" alt="Sodo Dumaki logo" width="34" height="34" />
+              <img src="assets/logo-icon.png" alt="Sodo Dumaki logo" />
               <span class="brand-word">SODO <span>DUMAKI</span></span>
             </a>
             <p>Athletic-designer gear built for the game and the street. Purple &amp; gold on the court, black &amp; grey off it.</p>

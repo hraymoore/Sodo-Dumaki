@@ -148,7 +148,7 @@ p { margin: 0 0 1em; color: var(--text); }
   gap: 10px;
   color: #fff;
 }
-.brand img { height: 38px; width: auto; }
+.brand img { height: 40px; width: auto; }
 .brand-word {
   font-family: var(--font-display);
   font-size: 1.5rem;
