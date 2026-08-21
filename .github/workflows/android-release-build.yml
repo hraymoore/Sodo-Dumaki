@@ -35,8 +35,17 @@ jobs:
 
       - name: Decode release keystore
         working-directory: android-app/android
+        env:
+          SODO_RELEASE_KEYSTORE_BASE64: ${{ secrets.SODO_RELEASE_KEYSTORE_BASE64 }}
+          SODO_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.SODO_RELEASE_KEYSTORE_PASSWORD }}
         run: |
-          echo "${{ secrets.SODO_RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          printf '%s' "$SODO_RELEASE_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d --ignore-garbage > release.keystore
+          echo "Decoded keystore size: $(stat -c%s release.keystore) bytes"
+          if ! keytool -list -keystore release.keystore -storepass "$SODO_RELEASE_KEYSTORE_PASSWORD" > /dev/null 2>&1; then
+            echo "::error::release.keystore is not a valid keystore for the given SODO_RELEASE_KEYSTORE_PASSWORD. Re-check the SODO_RELEASE_KEYSTORE_BASE64 and SODO_RELEASE_KEYSTORE_PASSWORD secrets."
+            exit 1
+          fi
+          echo "Keystore decoded and verified OK."
 
       - name: Build signed release AAB
         working-directory: android-app/android
