@@ -8,6 +8,9 @@ on:
       - ".github/workflows/android-build.yml"
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,9 +46,25 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload debug APK
+      - name: Upload debug APK (workflow artifact)
         uses: actions/upload-artifact@v4
         with:
           name: sodo-dumaki-debug-apk
           path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # Also published as a Release asset (not just a workflow artifact) so it has
+      # a stable, directly-downloadable URL instead of an expiring Actions-artifact link.
+      - name: Publish debug APK as a GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-debug-latest
+          name: "Android Debug Build (latest)"
+          body: |
+            Automatically built from the latest push to `android-app/`.
+            Debug build for sideloading/testing only — not signed for the Play Store.
+            Commit: ${{ github.sha }}
+          prerelease: true
+          files: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
