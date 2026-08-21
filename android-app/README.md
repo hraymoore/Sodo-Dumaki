@@ -29,18 +29,32 @@ npx cap sync android
 ```
 Then open the `android-app/android` folder in Android Studio and hit Run, or `cd android && ./gradlew assembleDebug`.
 
+## Signed release build (.aab) for Play Console
+
+`.github/workflows/android-release-build.yml` builds a **signed** release Android App Bundle — the file Play Console actually accepts. It's `workflow_dispatch`-only (run it manually from the Actions tab) rather than on every push, since it's meant to be run for real submissions, not on every commit.
+
+It reads four GitHub Actions repo secrets:
+
+| Secret | What goes in it |
+|---|---|
+| `SODO_RELEASE_KEYSTORE_BASE64` | The release keystore file, base64-encoded |
+| `SODO_RELEASE_KEYSTORE_PASSWORD` | The keystore password |
+| `SODO_RELEASE_KEY_ALIAS` | The key alias inside the keystore (`sododumaki`) |
+| `SODO_RELEASE_KEY_PASSWORD` | The key password (same as the keystore password for a PKCS12 keystore) |
+
+Add them under the repo's **Settings → Secrets and variables → Actions → New repository secret**. Once all four are set, run the workflow from the **Actions** tab (or push a change to the workflow file itself). It publishes `app-release.aab` both as a workflow artifact and as a GitHub Release asset tagged `android-release-latest`, ready to upload to Play Console.
+
+`android/app/build.gradle` only applies a signing config when those env vars are present, so local/CI debug builds are unaffected — nothing here changes how `assembleDebug` works.
+
+**Keep the keystore file and its password somewhere safe and permanently backed up outside of GitHub — if it's lost, this exact app listing can never be updated again** and a new listing would be needed under a different package/name. Do not commit the keystore file itself to the repo; only the base64 copy lives in the GitHub secret.
+
 ## Getting this onto the Google Play Store — what's still needed
 
-The debug APK from CI is for testing/sideloading only. Play Store submission needs a few things only you can do (they require your own accounts and identity/business verification — nothing here can be done on your behalf):
+The debug APK from CI is for testing/sideloading only, and the signed AAB above is the file Play Console needs. The rest of Play Store submission needs a few things only you can do (they require your own accounts and identity/business verification — nothing here can be done on your behalf):
 
 1. **A Google Play Console developer account** — [play.google.com/console](https://play.google.com/console), $25 one-time fee, requires identity verification.
-2. **A signed release build.** Play Store requires an `.aab` (Android App Bundle), signed with a release key — not the debug build CI currently produces. Generate a keystore once:
-   ```
-   keytool -genkeypair -v -keystore sodo-dumaki-release.keystore -alias sododumaki -keyalg RSA -keysize 2048 -validity 10000
-   ```
-   **Keep that keystore file and its passwords somewhere safe and backed up — if you lose it, you can never publish an update to the same app listing again.** Once you have it, add it as GitHub Actions secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) and the workflow can be extended to run `./gradlew bundleRelease` with signing configured — ask for this next and it can be wired up.
-3. **Play Store listing assets**: a 512×512 app icon, a 1024×500 feature graphic, at least 2 phone screenshots, a short and full description, and a **privacy policy URL** (required by Google even for a simple storefront app — this site doesn't have one yet; that's worth building before submitting).
-4. **App content questionnaire** in Play Console (data safety, target audience, ads declaration, etc.) — Google requires this for every app, filled out by the account owner.
-5. Submit for review. Google's review for a straightforward, functional app like this is typically a few days.
+2. **Play Store listing assets**: a 512×512 app icon, a 1024×500 feature graphic, at least 2 phone screenshots, a short and full description, and a **privacy policy URL** (required by Google even for a simple storefront app — this site doesn't have one yet; that's worth building before submitting).
+3. **App content questionnaire** in Play Console (data safety, target audience, ads declaration, etc.) — Google requires this for every app, filled out by the account owner.
+4. Upload the signed `.aab` from the workflow above to Play Console (Production, or a testing track first), and submit for review. Google's review for a straightforward, functional app like this is typically a few days.
 
 One thing to watch for: Google's Play Store policy discourages "trivial" WebView-wrapper apps that add no value over the website. This app already clears that bar somewhat (native icon, splash screen, installable app, status bar theming) — if it gets flagged in review, the next step would be adding a genuinely native feature (push notifications for drops/restocks, for example) rather than just more wrapper polish.
