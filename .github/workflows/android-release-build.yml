@@ -34,7 +34,7 @@ jobs:
         run: npx cap sync android
 
       - name: Decode release keystore
-        working-directory: android-app/android
+        working-directory: android-app/android/app
         env:
           SODO_RELEASE_KEYSTORE_BASE64: ${{ secrets.SODO_RELEASE_KEYSTORE_BASE64 }}
           SODO_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.SODO_RELEASE_KEYSTORE_PASSWORD }}
@@ -60,7 +60,7 @@ jobs:
 
       - name: Remove decoded keystore
         if: always()
-        working-directory: android-app/android
+        working-directory: android-app/android/app
         run: rm -f release.keystore
 
       - name: Upload signed AAB (workflow artifact)
