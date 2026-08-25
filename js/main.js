@@ -30,37 +30,38 @@ function sdSet(key, value) {
 }
 
 /* ---------------- cart ----------------
-   Each line carries an optional baseColor/threadColor (from a product's
-   customize box), so the same product in two different colorways is
-   tracked as two separate cart lines. lineId is the unique cart key;
-   `id` stays the plain productId for catalog lookups. */
+   Each line carries an optional size/baseColor/threadColor (from a
+   product's customize box), so the same product in two different
+   sizes or colorways is tracked as two separate cart lines. lineId is
+   the unique cart key; `id` stays the plain productId for catalog
+   lookups. */
 function sdGetCart() { return sdGet(SD_KEYS.cart, []); }
 function sdSaveCart(cart) { sdSet(SD_KEYS.cart, cart); sdUpdateCartBadge(); }
 function sdCartCount() { return sdGetCart().reduce((sum, l) => sum + l.qty, 0); }
-function sdCartLineId(productId, baseColor, threadColor) {
-  return `${productId}::${baseColor || ""}::${threadColor || ""}`;
+function sdCartLineId(productId, size, baseColor, threadColor) {
+  return `${productId}::${size || ""}::${baseColor || ""}::${threadColor || ""}`;
 }
 function sdAddToCart(productId, qty = 1, options = {}) {
-  const { baseColor = null, threadColor = null } = options;
+  const { size = null, baseColor = null, threadColor = null, limitedEdition = false } = options;
   const cart = sdGetCart();
-  const lineId = sdCartLineId(productId, baseColor, threadColor);
-  const existing = cart.find((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) === lineId);
+  const lineId = sdCartLineId(productId, size, baseColor, threadColor);
+  const existing = cart.find((l) => sdCartLineId(l.id, l.size, l.baseColor, l.threadColor) === lineId);
   if (existing) existing.qty += qty;
-  else cart.push({ id: productId, qty, baseColor, threadColor });
+  else cart.push({ id: productId, qty, size, baseColor, threadColor, limitedEdition });
   sdSaveCart(cart);
 }
 function sdUpdateQty(lineId, qty) {
   let cart = sdGetCart();
   if (qty <= 0) {
-    cart = cart.filter((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) !== lineId);
+    cart = cart.filter((l) => sdCartLineId(l.id, l.size, l.baseColor, l.threadColor) !== lineId);
   } else {
-    const line = cart.find((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) === lineId);
+    const line = cart.find((l) => sdCartLineId(l.id, l.size, l.baseColor, l.threadColor) === lineId);
     if (line) line.qty = qty;
   }
   sdSaveCart(cart);
 }
 function sdRemoveFromCart(lineId) {
-  sdSaveCart(sdGetCart().filter((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) !== lineId));
+  sdSaveCart(sdGetCart().filter((l) => sdCartLineId(l.id, l.size, l.baseColor, l.threadColor) !== lineId));
 }
 function sdCartLinesWithProducts() {
   const products = typeof SD_PRODUCTS !== "undefined" ? SD_PRODUCTS : [];
@@ -68,7 +69,7 @@ function sdCartLinesWithProducts() {
     .map((line) => {
       const product = products.find((p) => p.id === line.id);
       if (!product) return null;
-      const lineId = sdCartLineId(line.id, line.baseColor, line.threadColor);
+      const lineId = sdCartLineId(line.id, line.size, line.baseColor, line.threadColor);
       return { ...line, lineId, product };
     })
     .filter(Boolean);
@@ -269,11 +270,21 @@ function sdSwatchRowHtml(group, colors, defaultKey) {
   `).join("");
 }
 
+function sdSizeSelectHtml(id) {
+  return `<select id="${id}" data-size-select required>
+    <option value="">Select size...</option>
+    ${SD_RETAIL_SIZES.map((s) => `<option value="${s}">${s}</option>`).join("")}
+  </select>`;
+}
+
 function sdCustomizeBoxHtml(p) {
-  if (p.customizable) {
-    const soldNow = sdColorwaySoldCount(p.id, SD_GARMENT_COLORS[0].key, SD_THREAD_COLORS[0].key);
+  if (!p.customizable) {
     return `
-      <div class="customize-box" data-customize="${p.id}">
+      <div class="customize-box customize-box--basic" data-customize="${p.id}">
+        <div class="customize-row">
+          <span class="customize-label">Size</span>
+          ${sdSizeSelectHtml(p.id + "-size")}
+        </div>
         <div class="customize-row">
           <span class="customize-label">Base Color</span>
           <div class="swatch-row">${sdSwatchRowHtml("base", SD_GARMENT_COLORS)}</div>
@@ -282,21 +293,39 @@ function sdCustomizeBoxHtml(p) {
           <span class="customize-label">Thread Color</span>
           <div class="swatch-row">${sdSwatchRowHtml("thread", SD_THREAD_COLORS)}</div>
         </div>
-        <div class="colorway-stock" data-colorway-stock>${soldNow} of ${SD_COLORWAY_CAP} made in this colorway</div>
+        <div class="colorway-stock">Restocked as needed — no colorway limit</div>
       </div>
     `;
   }
-  if (p.colorizable) {
-    return `
-      <div class="customize-box customize-box--basic" data-customize="${p.id}">
-        <div class="customize-row">
-          <span class="customize-label">Color</span>
-          <div class="swatch-row">${sdSwatchRowHtml("base", SD_GARMENT_COLORS)}</div>
-        </div>
+  // Gold thread is reserved for the Limited Edition toggle below, not a
+  // regular swatch choice — that's what keeps its 555-unit run distinct
+  // (counted across every base color for this design) from the regular
+  // per base+thread colorway caps.
+  const regularThreads = SD_THREAD_COLORS.filter((c) => c.key !== "gold");
+  const goldThread = sdThreadColor("gold");
+  return `
+    <div class="customize-box" data-customize="${p.id}">
+      <div class="customize-row">
+        <span class="customize-label">Size</span>
+        ${sdSizeSelectHtml(p.id + "-size")}
       </div>
-    `;
-  }
-  return "";
+      <div class="customize-row">
+        <span class="customize-label">Base Color</span>
+        <div class="swatch-row">${sdSwatchRowHtml("base", SD_GARMENT_COLORS)}</div>
+      </div>
+      <div class="customize-row">
+        <span class="customize-label">Thread Color</span>
+        <div class="swatch-row">${sdSwatchRowHtml("thread", regularThreads)}</div>
+      </div>
+      <div class="customize-row">
+        <button type="button" class="btn-limited-edition" data-limited-edition="${p.id}"
+          title="Locks thread to Sodo Gold (Isacord ${goldThread.isacord}) — one shared 555-unit run across every base color for this design">
+          &#9733; Limited Edition — Gold Stitch (555 total, any base color)
+        </button>
+      </div>
+      <div class="colorway-stock" data-colorway-stock>${sdColorwaySoldCount(p.id, SD_GARMENT_COLORS[0].key, regularThreads[0].key)} of ${SD_COLORWAY_CAP} made in this colorway</div>
+    </div>
+  `;
 }
 
 function sdProductCardHtml(p) {
@@ -305,13 +334,13 @@ function sdProductCardHtml(p) {
     ? `<a class="btn btn-gold btn-block" href="${p.squareLink}" target="_blank" rel="noopener">Buy Now — Square</a>`
     : `<button class="btn btn-gold btn-block" disabled title="Square payment link not connected yet">Buy Now — Coming Soon</button>`;
   return `
-    <div class="product-card" data-category="${p.category}">
+    <div class="product-card" data-category="${p.category}" data-type="${p.type || ""}">
       <div class="product-media">
         ${badge}
         <img src="${p.image}" alt="${p.name}" />
       </div>
       <div class="product-info">
-        <span class="product-cat">${p.category}</span>
+        <span class="product-cat">${p.category}${p.type ? " &middot; " + p.type : ""}</span>
         <p class="product-name">${p.name}</p>
         <span class="product-price">${sdFormatPrice(p.price)}</span>
         ${sdCustomizeBoxHtml(p)}
@@ -330,8 +359,16 @@ function sdBindProductCardInteractions(root = document) {
       btn.addEventListener("click", () => {
         const group = btn.dataset.swatchGroup;
         card.querySelectorAll(`[data-swatch-group="${group}"]`).forEach((b) => b.classList.toggle("active", b === btn));
+        if (group === "thread") card.querySelector("[data-limited-edition]")?.classList.remove("active");
         sdUpdateColorwayStock(card);
       });
+    });
+    card.querySelector("[data-limited-edition]")?.addEventListener("click", (e) => {
+      e.currentTarget.classList.toggle("active");
+      if (e.currentTarget.classList.contains("active")) {
+        card.querySelectorAll('[data-swatch-group="thread"]').forEach((b) => b.classList.remove("active"));
+      }
+      sdUpdateColorwayStock(card);
     });
     sdUpdateColorwayStock(card);
   });
@@ -340,13 +377,22 @@ function sdBindProductCardInteractions(root = document) {
     btn.addEventListener("click", () => {
       const card = btn.closest(".product-card");
       const productId = btn.getAttribute("data-add-to-cart");
+      const sizeSelect = card?.querySelector("[data-size-select]");
+      if (sizeSelect && !sizeSelect.value) {
+        sizeSelect.reportValidity ? sizeSelect.reportValidity() : null;
+        sdToast("Choose a size first");
+        return;
+      }
+      const limitedEditionBtn = card?.querySelector("[data-limited-edition].active");
       const baseBtn = card?.querySelector('[data-swatch-group="base"].active');
       const threadBtn = card?.querySelector('[data-swatch-group="thread"].active');
       sdAddToCart(productId, 1, {
+        size: sizeSelect ? sizeSelect.value : null,
         baseColor: baseBtn ? baseBtn.dataset.swatchValue : null,
-        threadColor: threadBtn ? threadBtn.dataset.swatchValue : null,
+        threadColor: limitedEditionBtn ? "gold" : (threadBtn ? threadBtn.dataset.swatchValue : null),
+        limitedEdition: !!limitedEditionBtn,
       });
-      sdToast("Added to cart");
+      sdToast(limitedEditionBtn ? "Added Limited Edition Gold Stitch to cart" : "Added to cart");
     });
   });
 }
@@ -358,8 +404,21 @@ function sdUpdateColorwayStock(card) {
   if (!stockEl) return;
   const productId = card.querySelector("[data-add-to-cart]")?.getAttribute("data-add-to-cart");
   const baseBtn = card.querySelector('[data-swatch-group="base"].active');
+  const limitedEditionActive = card.querySelector("[data-limited-edition].active");
   const threadBtn = card.querySelector('[data-swatch-group="thread"].active');
-  if (!productId || !baseBtn || !threadBtn) return;
+  if (!productId) return;
+
+  if (limitedEditionActive) {
+    const sold = sdLimitedEditionSoldCount(productId);
+    const remaining = SD_COLORWAY_CAP - sold;
+    stockEl.textContent = remaining <= 0
+      ? `Sold out — all ${SD_COLORWAY_CAP} Limited Edition Gold Stitch pieces made`
+      : `${sold} of ${SD_COLORWAY_CAP} made in this Limited Edition (Gold Stitch, any base color)`;
+    stockEl.classList.toggle("colorway-stock--low", remaining > 0 && remaining <= 50);
+    stockEl.classList.toggle("colorway-stock--out", remaining <= 0);
+    return;
+  }
+  if (!baseBtn || !threadBtn) return;
   const sold = sdColorwaySoldCount(productId, baseBtn.dataset.swatchValue, threadBtn.dataset.swatchValue);
   const remaining = SD_COLORWAY_CAP - sold;
   stockEl.textContent = remaining <= 0

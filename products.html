@@ -25,6 +25,10 @@
 <section class="section">
   <div class="container">
     <div class="filter-tabs" id="filterTabs"></div>
+    <div class="type-filter-row">
+      <label for="typeFilter">Type</label>
+      <select id="typeFilter"></select>
+    </div>
     <div class="product-grid" id="productGrid"></div>
   </div>
 </section>
@@ -39,16 +43,34 @@
   sdRenderFooter();
 
   const tabsEl = document.getElementById("filterTabs");
+  const typeSelect = document.getElementById("typeFilter");
   const gridEl = document.getElementById("productGrid");
+  let activeCategory = "all";
 
-  function renderProducts(category) {
-    const items = category === "all" ? SD_PRODUCTS : SD_PRODUCTS.filter(p => p.category === category);
+  function typesForCategory(category) {
+    const pool = category === "all" ? SD_PRODUCTS : SD_PRODUCTS.filter(p => p.category === category);
+    return Array.from(new Set(pool.map(p => p.type).filter(Boolean))).sort();
+  }
+
+  function renderTypeOptions(category) {
+    const types = typesForCategory(category);
+    typeSelect.innerHTML = `<option value="all">All Types</option>` + types.map(t => `<option value="${t}">${t}</option>`).join("");
+    typeSelect.value = "all";
+  }
+
+  function renderProducts() {
+    const category = activeCategory;
+    const type = typeSelect.value;
+    let items = category === "all" ? SD_PRODUCTS : SD_PRODUCTS.filter(p => p.category === category);
+    if (type && type !== "all") items = items.filter(p => p.type === type);
     gridEl.innerHTML = items.map(sdProductCardHtml).join("");
     sdBindProductCardInteractions(gridEl);
   }
 
   function setActiveTab(category) {
+    activeCategory = category;
     tabsEl.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.cat === category));
+    renderTypeOptions(category);
   }
 
   tabsEl.innerHTML = SD_CATEGORIES.map(c => `<button data-cat="${c.id}">${c.label}</button>`).join("");
@@ -56,13 +78,14 @@
     const btn = e.target.closest("button");
     if (!btn) return;
     setActiveTab(btn.dataset.cat);
-    renderProducts(btn.dataset.cat);
+    renderProducts();
     history.replaceState(null, "", btn.dataset.cat === "all" ? "products.html" : `products.html#${btn.dataset.cat}`);
   });
+  typeSelect.addEventListener("change", renderProducts);
 
   const initialCat = SD_CATEGORIES.some(c => c.id === location.hash.replace("#","")) ? location.hash.replace("#","") : "all";
   setActiveTab(initialCat);
-  renderProducts(initialCat);
+  renderProducts();
 </script>
 </body>
 </html>

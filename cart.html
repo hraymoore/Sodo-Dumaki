@@ -52,9 +52,11 @@
 
     const subtotal = sdCartSubtotal();
     const rows = lines.map(l => {
-      const colorwayLine = l.baseColor
+      const colorwayLine = (l.size || l.baseColor)
         ? `<div class="cart-colorway">
-            <span class="swatch swatch--mini" style="background:${sdGarmentColor(l.baseColor).hex};" title="${sdGarmentColor(l.baseColor).label}"></span> ${sdGarmentColor(l.baseColor).label}
+            ${l.limitedEdition ? `<span style="color:var(--sd-gold);font-weight:700;">&#9733; Limited Edition</span> &middot; ` : ""}
+            ${l.size ? `Size ${l.size}` : ""}
+            ${l.baseColor ? `${l.size ? " &middot; " : ""}<span class="swatch swatch--mini" style="background:${sdGarmentColor(l.baseColor).hex};" title="${sdGarmentColor(l.baseColor).label}"></span> ${sdGarmentColor(l.baseColor).label}` : ""}
             ${l.threadColor ? `<span class="swatch swatch--mini" style="background:${sdThreadColor(l.threadColor).hex};" title="${sdThreadColor(l.threadColor).label}"></span> ${sdThreadColor(l.threadColor).label} thread` : ""}
           </div>`
         : "";

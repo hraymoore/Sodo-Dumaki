@@ -43,6 +43,11 @@ const SD_SIZE_LIST = [
   ["aXL", "Adult XL"], ["a2XL", "Adult 2XL"], ["a3XL", "Adult 3XL"],
 ];
 
+/* Single-size picker for retail product cards (distinct from the bulk
+   order size-quantity grid above, which breaks a business order down
+   piece-by-piece across youth/adult sizes). */
+const SD_RETAIL_SIZES = ["XS", "S", "M", "L", "XL", "2XL"];
+
 const SD_BULK_MINIMUM = 100;
 
 /* ---------------- custom colorways (retail catalog) ----------------
@@ -96,13 +101,27 @@ function sdColorwaySoldCount(productId, baseColor, threadColor) {
   return count;
 }
 
+/* Limited Edition (Gold Stitch) run: one shared 555-unit pool per design,
+   counted across every base color — separate from the regular per
+   base+thread colorway caps above, so it stays a distinct, scarcer tier. */
+function sdLimitedEditionSoldCount(productId) {
+  const orders = sdGetOrders().filter((o) => o.type === "retail" && o.meta && Array.isArray(o.meta.colorwayLines));
+  let count = 0;
+  orders.forEach((o) => {
+    o.meta.colorwayLines.forEach((line) => {
+      if (line.productId === productId && line.threadColor === "gold") count += line.qty;
+    });
+  });
+  return count;
+}
+
 function sdColorwayBreakdown() {
   const orders = sdGetOrders().filter((o) => o.type === "retail" && o.meta && Array.isArray(o.meta.colorwayLines));
   const map = new Map();
   orders.forEach((o) => {
     o.meta.colorwayLines.forEach((line) => {
-      const key = `${line.productId}__${line.baseColor}__${line.threadColor || ""}`;
-      if (!map.has(key)) map.set(key, { productId: line.productId, baseColor: line.baseColor, threadColor: line.threadColor, qty: 0 });
+      const key = `${line.productId}__${line.baseColor}__${line.threadColor || ""}__${line.size || ""}`;
+      if (!map.has(key)) map.set(key, { productId: line.productId, baseColor: line.baseColor, threadColor: line.threadColor, size: line.size, qty: 0 });
       map.get(key).qty += line.qty;
     });
   });
@@ -223,9 +242,12 @@ function sdSeedSampleOrders(count = 60) {
       const colorwayLines = [];
       if (catalog.length > 0) {
         const product = catalog[Math.floor(Math.random() * catalog.length)];
+        const isLimitedEdition = Math.random() < 0.15;
+        const regularThreads = SD_THREAD_COLORS.filter((c) => c.key !== "gold");
         const base = SD_GARMENT_COLORS[Math.floor(Math.random() * SD_GARMENT_COLORS.length)];
-        const thread = SD_THREAD_COLORS[Math.floor(Math.random() * SD_THREAD_COLORS.length)];
-        colorwayLines.push({ productId: product.id, baseColor: base.key, threadColor: thread.key, qty: 1 + Math.floor(Math.random() * 3) });
+        const threadKey = isLimitedEdition ? "gold" : regularThreads[Math.floor(Math.random() * regularThreads.length)].key;
+        const size = SD_RETAIL_SIZES[Math.floor(Math.random() * SD_RETAIL_SIZES.length)];
+        colorwayLines.push({ productId: product.id, size, baseColor: base.key, threadColor: threadKey, qty: 1 + Math.floor(Math.random() * 3) });
       }
       orders.push({
         id: "sample_" + i + "_" + Math.random().toString(36).slice(2, 6),

@@ -160,21 +160,26 @@
     document.getElementById("colorwayTable").innerHTML = colorwayRows.length === 0
       ? `<tbody><tr><td style="padding:16px 8px;color:var(--text-muted);">No customized orders recorded yet.</td></tr></tbody>`
       : `
-        <thead><tr><th>Design</th><th>Blank SKU</th><th>Base Color</th><th>Thread Color</th><th>Units Ordered</th><th>Remaining In Colorway</th></tr></thead>
+        <thead><tr><th>Design</th><th>Blank SKU</th><th>Size</th><th>Base Color</th><th>Thread Color</th><th>Units Ordered</th><th>Remaining In Run</th></tr></thead>
         <tbody>
           ${colorwayRows.map((r) => {
             const product = SD_PRODUCTS.find((p) => p.id === r.productId);
             const base = sdGarmentColor(r.baseColor);
             const thread = sdThreadColor(r.threadColor);
-            const remaining = SD_COLORWAY_CAP - r.qty;
+            const isLimitedEdition = r.threadColor === "gold";
+            const capped = product ? product.customizable : true;
+            const runTotal = isLimitedEdition ? sdLimitedEditionSoldCount(r.productId) : sdColorwaySoldCount(r.productId, r.baseColor, r.threadColor);
+            const remaining = SD_COLORWAY_CAP - runTotal;
+            const runLabel = isLimitedEdition ? "(Limited Edition total, all base colors)" : "(colorway total)";
             return `
-              <tr>
-                <td>${product ? product.name : r.productId}</td>
+              <tr${isLimitedEdition ? ' style="background:rgba(212,175,55,.08);"' : ""}>
+                <td>${product ? product.name : r.productId}${isLimitedEdition ? ' <span style="color:var(--sd-gold);font-weight:700;">&#9733; LE</span>' : ""}</td>
                 <td style="font-size:.82rem;color:var(--text-muted);">${product ? product.blankSku || "—" : "—"}</td>
+                <td>${r.size || "—"}</td>
                 <td><span class="swatch swatch--mini" style="background:${base.hex};"></span> ${base.label}</td>
                 <td><span class="swatch swatch--mini" style="background:${thread.hex};"></span> ${thread.label} (Isacord ${thread.isacord})</td>
                 <td>${r.qty}</td>
-                <td style="color:${remaining <= 50 ? "#b3261e" : "inherit"};font-weight:${remaining <= 50 ? 700 : 400};">${remaining <= 0 ? "Sold out" : remaining}</td>
+                <td style="color:${capped && remaining <= 50 ? "#b3261e" : "inherit"};font-weight:${capped && remaining <= 50 ? 700 : 400};">${capped ? (remaining <= 0 ? "Sold out" : remaining + " " + runLabel) : "Uncapped"}</td>
               </tr>
             `;
           }).join("")}

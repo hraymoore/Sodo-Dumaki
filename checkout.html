@@ -84,10 +84,12 @@
   }
 
   function colorwaySummaryLine(l) {
-    if (!l.baseColor) return "";
-    const base = sdGarmentColor(l.baseColor).label;
+    if (!l.size && !l.baseColor) return "";
+    const le = l.limitedEdition ? `<strong style="color:var(--sd-purple);">&#9733; Limited Edition</strong> &middot; ` : "";
+    const size = l.size ? `Size ${l.size}` : "";
+    const base = l.baseColor ? `${size ? " &middot; " : ""}${sdGarmentColor(l.baseColor).label}` : "";
     const thread = l.threadColor ? ` &middot; ${sdThreadColor(l.threadColor).label} thread` : "";
-    return `<div style="font-size:.78rem;color:var(--text-muted);">${base}${thread}</div>`;
+    return `<div style="font-size:.78rem;color:var(--text-muted);">${le}${size}${base}${thread}</div>`;
   }
 
   function renderSummary() {
@@ -122,10 +124,12 @@
     sdSubscribeNewsletter(email);
 
     const orderItems = lines.map(l => {
+      const size = l.size ? ` [Size ${l.size}]` : "";
+      const le = l.limitedEdition ? " [LIMITED EDITION]" : "";
       const colorway = l.baseColor ? ` (${sdGarmentColor(l.baseColor).label}${l.threadColor ? " / " + sdThreadColor(l.threadColor).label + " thread" : ""})` : "";
-      return `${l.qty} x ${l.product.name}${colorway}`;
+      return `${l.qty} x ${l.product.name}${size}${colorway}${le}`;
     });
-    const colorwayLines = lines.filter(l => l.baseColor).map(l => ({ productId: l.id, baseColor: l.baseColor, threadColor: l.threadColor, qty: l.qty }));
+    const colorwayLines = lines.filter(l => l.baseColor).map(l => ({ productId: l.id, size: l.size, baseColor: l.baseColor, threadColor: l.threadColor, qty: l.qty, limitedEdition: !!l.limitedEdition }));
 
     const subtotal = sdCartSubtotal();
     const shipping = subtotal >= 100 ? 0 : 8;
