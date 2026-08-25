@@ -355,6 +355,36 @@ p { margin: 0 0 1em; color: var(--text); }
 .product-actions .btn { flex: 1; padding: 11px 12px; font-size: .82rem; }
 .product-actions .btn[disabled] { background: var(--sd-grey-100); color: var(--sd-grey-500); border-color: var(--sd-grey-100); }
 
+/* ---------- Customize box (base color / thread color) ---------- */
+.customize-box {
+  border: 1.5px dashed var(--sd-grey-100);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.customize-row { display: flex; flex-direction: column; gap: 6px; }
+.customize-label { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--sd-grey-500); }
+.swatch-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--sd-grey-100);
+  padding: 0;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.swatch:hover { transform: scale(1.1); }
+.swatch.active { border-color: var(--sd-purple); box-shadow: 0 0 0 2px rgba(75,46,131,.25); }
+.swatch--mini { width: 12px; height: 12px; display: inline-block; vertical-align: middle; margin-right: 3px; border-width: 1px; cursor: default; }
+.colorway-stock { font-size: .74rem; color: var(--sd-grey-500); }
+.colorway-stock--low { color: #b3261e; font-weight: 600; }
+.colorway-stock--out { color: #b3261e; font-weight: 700; }
+.cart-colorway { font-size: .78rem; color: var(--text-muted); margin-top: 4px; }
+
 /* ---------- Forms ---------- */
 .form-card {
   max-width: 460px;

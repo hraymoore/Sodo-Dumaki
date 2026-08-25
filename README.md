@@ -6,24 +6,24 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 
 | Page | Purpose |
 |---|---|
-| `index.html` | Home — hero, category tiles, best sellers, layaway callout, newsletter signup |
-| `products.html` | Full catalog with category tabs (Tops, Bottoms, Outerwear, Headwear, Bags, Accessories) |
+| `index.html` | Home — hero, category tiles, best sellers, custom-colorway callout, newsletter signup |
+| `products.html` | Full catalog with category tabs (Tops, Bottoms, Outerwear, Headwear, Bags, Accessories) — signature designs include a base-color + thread-color customize box |
 | `about.html` | Brand story, mission, values |
 | `careers.html` | Open roles, perks, apply-by-email |
-| `layaway.html` | Layaway program explainer + live calculator (60% down / 40% at completion) |
+| `layaway.html` | **Business layaway** explainer + bulk-order deposit calculator (60% down / 40% at completion) — retail customers pay in full; layaway is for qualifying business/bulk orders only |
 | `login.html` | Sign in, create an account (email + password), or continue as guest |
-| `account.html` | Account portal — profile, order history, layaway plan status |
-| `cart.html` | Shopping cart |
-| `checkout.html` | Shipping info, then hands off to Square for payment (or emails a layaway request) |
-| `business.html` | Business account sign in/registration + bulk order request form (teams, schools, hotels, medical offices, staff uniforms, events — 100-piece minimum) |
+| `account.html` | Account portal — profile, order history, Sodo Rewards |
+| `cart.html` | Shopping cart — shows each item's chosen base + thread colorway |
+| `checkout.html` | Shipping info, then hands off to Square for full payment |
+| `business.html` | Business account sign in/registration + bulk order request form (teams, schools, hotels, medical offices, staff uniforms, events — 100-piece minimum, layaway available here) |
 | `rewards.html` | Public Sodo Rewards explainer — earning rate, reward catalog, status tiers |
-| `analytics.html` | Internal sales dashboard — orders/revenue by state and city (soft-gated, not linked from the public nav) |
+| `analytics.html` | Internal sales dashboard — orders/revenue by state and city, plus a colorway production report (soft-gated, not linked from the public nav) |
 
 ## Brand system
 
 - **Colors:** deep royal purple `#4b2e83`, metallic gold `#d4af37`, black `#0b0b0d`, and a grey scale from `#e7e7ea` to `#3a3a3f` — defined as CSS variables at the top of `css/styles.css`. This reads as premium/athletic (closer to a Nike x Nordstrom hybrid) without leaning fully "streetwear" or fully "luxury." If you'd rather try an accent shift (e.g. a brighter violet or a warmer champagne gold for more contrast on mobile), that's a one-file change in `:root`.
 - **Type:** "Bebas Neue" (condensed display, headlines/buttons) + "Inter" (body), loaded from Google Fonts.
-- **Logo:** `assets/logo.svg` is a placeholder wordmark/emblem — no logo file was ever provided in this repo or conversation, so swap in your real logo (SVG or PNG) and update the `<img src="assets/logo.svg">` references in `js/main.js` (`sdRenderHeader`/`sdRenderFooter`) once you have it.
+- **Logo:** `assets/logo-icon.png` (mark only, used in nav/footer/favicons/app icon) and `assets/logo-full.png` (mark + wordmark, used on `about.html` and the Android splash screen) are the real Sodo Dumaki brand files, processed from the provided artwork with a transparent background.
 - **Product photos:** every product image is a self-contained placeholder SVG generated in `js/products-data.js` (no external image service, so nothing to break). Replace each product's `image` field with a real photo URL before launch.
 
 ## How the site is wired together
@@ -33,6 +33,16 @@ A responsive, mobile-friendly front end for the Sodo Dumaki e-commerce site: sho
 - `js/commerce.js` holds everything business/bulk-order specific: the sports/apparel/state/size-grid data and HTML helpers, business account signup, the order log (`sdRecordOrder`/`sdGetOrders`), analytics aggregation (`sdAnalyticsSummary`/`sdAnalyticsByRegion`), the Rewards points functions, and the shared bulk order form renderer used by `business.html` and the business account portal. `checkout.html` also calls into it now, both to log retail orders (for analytics) and to award Rewards points.
 - Cart, accounts, and the newsletter/email list are stored in the browser's `localStorage` so the whole flow (browse → cart → login/guest → checkout) works end-to-end for demos and review.
 
+## Custom colorways (base color + thread color)
+
+Every signature Sodo Dumaki design is sold as a **limited run per colorway**: shoppers pick a base garment color and a thread/stitch color on the product card, and each design+colorway combination is capped at **`SD_COLORWAY_CAP` (555) units, ever** — defined in `js/commerce.js` alongside `SD_GARMENT_COLORS` (the 7 most popular base colors) and `SD_THREAD_COLORS` (the 7 most popular thread colors, each mapped to a commonly used Isacord 40 embroidery reference number — confirm exact codes with your embroidery vendor before production).
+
+- **Signature designs** (`customizable: true` in `js/products-data.js`) get the full customize box: base color swatches + thread color swatches + a live "X of 555 made in this colorway" counter.
+- **Essential/base items** (`colorizable: true`, e.g. the Essential Tee, gloves, water bottle) get a simple color picker only — no thread color, no 555 cap, since these are meant to restock indefinitely rather than act as limited designs.
+- Each product also carries a `blankSku` field — a realistic reference blank garment (e.g. "Bella+Canvas 3001", "Yupoong 6089M") for sourcing/production planning. Confirm with your actual supplier before ordering.
+- **Tracking sold-per-colorway:** `sdColorwaySoldCount()` and `sdColorwayBreakdown()` in `js/commerce.js` compute this from orders recorded in `localStorage` — same demo-scope caveat as everything else here (per-browser only, not real cross-customer inventory). `analytics.html` has a **Colorway Production Report** table (design, blank SKU, base color, thread color + Isacord code, units ordered, remaining in the colorway) formatted to hand straight to a factory/embroidery vendor. Once a real backend exists, this becomes real inventory enforcement instead of a display-only count.
+- Cart lines track colorway per item (`js/main.js`'s `sdCartLineId`), so the same design in two different colorways shows as two separate cart rows, and `checkout.html` logs each order's `colorwayLines` for the production report.
+
 ## Connecting real payments: Square
 
 This site is built to connect to **Square** (app.squareup.com — payments/POS), not Squarespace (a different company/website builder). Because this is a custom-coded site, Square is the natural fit: it gives you real hosted checkout links you can drop straight into HTML, with no separate site builder to migrate into.
@@ -41,7 +51,7 @@ We're using the simplest, no-backend approach: **Square Payment Links**. Each pr
 
 ### Setup steps
 
-1. **Create your items in Square.** In the [Square Dashboard](https://app.squareup.com/dashboard/) → **Items & Orders → Items**, add each product from `js/products-data.js` with the matching name and price (22 products across Tops, Bottoms, Outerwear, Headwear, Bags, Accessories).
+1. **Create your items in Square.** In the [Square Dashboard](https://app.squareup.com/dashboard/) → **Items & Orders → Items**, add each product from `js/products-data.js` with the matching name and price (24 products across Tops, Bottoms, Outerwear, Headwear, Bags, Accessories).
 2. **Generate a Payment Link per item.** Square Dashboard → **Payments → Payment Links** (or from an item's page, "Share" → "Create a link"). Copy the URL Square gives you.
 3. **Paste each link into the catalog.** Open `js/products-data.js` — every product has a line like:
    ```js
@@ -60,10 +70,10 @@ Square Payment Links are one link per item — they don't merge multiple differe
 
 ### Layaway → Square Invoices
 
-Square doesn't support splitting a single Payment Link into a deposit + balance, but **Square Invoices does** — it has a built-in **Installments** feature that lets you send an invoice with a deposit due now and a balance due later, which matches this business's terms exactly (60% now, 40% at completion).
+Square doesn't support splitting a single Payment Link into a deposit + balance, but **Square Invoices does** — it has a built-in **Installments** feature that lets you send an invoice with a deposit due now and a balance due later, which matches this business's terms exactly (60% now, 40% at completion). **Layaway is business/bulk-only** — retail customers on `checkout.html` always pay in full via Square; only the bulk order form on `business.html` offers a layaway payment preference.
 
 The flow as built:
-1. A customer fills out the layaway form on `checkout.html` and clicks **"Email My Layaway Request"** — this opens their email client with a pre-filled message (to `layaway@sododumaki.com`) listing their items, total, and the 60%/40% split.
+1. A business customer selects "Layaway" as their payment preference on the bulk order form (`business.html` or the business account portal) and submits — this opens their email client with a pre-filled message (to `business@sododumaki.com`) listing their order and the 60%/40% split.
 2. You (the merchant) go to Square Dashboard → **Invoices → Create Invoice**, add the items, turn on **Installments**, and set the first payment to 60% and the second to 40% — due whenever the order is complete.
 3. Square emails the customer a secure invoice; they pay the deposit online, and you get paid the balance the same way once the order's ready to ship.
 
@@ -120,9 +130,10 @@ A simple points program for consumer accounts, defined in `js/commerce.js`:
 
 ## Layaway terms (as implemented)
 
+- **Business/bulk orders only** (100-piece minimum) — retail shop orders always pay in full.
 - **60% deposit due before an order starts production.**
 - **40% balance due at completion**, before the order ships.
-- No interest, no credit check — shown throughout `layaway.html` and the checkout flow.
+- No interest, no credit check — shown throughout `layaway.html` and the business bulk order form.
 
 ## Running locally
 

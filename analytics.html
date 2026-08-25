@@ -73,6 +73,16 @@
     </div>
 
     <div style="margin-top:48px;">
+      <span class="eyebrow">Production</span>
+      <h2 style="font-size:1.6rem;">Colorway Production Report</h2>
+      <div class="divider-gold"></div>
+      <p style="color:var(--text-muted);max-width:700px;">Units ordered per design + base color + thread color combo, capped at 555 each. This table is formatted to hand straight to your embroidery/blank supplier — garment blank SKU, thread color with its Isacord reference number, and quantity to cut.</p>
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table class="cart-table" id="colorwayTable"></table>
+      </div>
+    </div>
+
+    <div style="margin-top:48px;">
       <span class="eyebrow">Activity Log</span>
       <h2 style="font-size:1.6rem;">Recent Orders &amp; Requests</h2>
       <div class="divider-gold"></div>
@@ -145,6 +155,31 @@
 
     document.getElementById("stateTable").innerHTML = regionTableHtml(sdAnalyticsByRegion("state"), "State");
     document.getElementById("cityTable").innerHTML = regionTableHtml(sdAnalyticsByRegion("city"), "City");
+
+    const colorwayRows = sdColorwayBreakdown();
+    document.getElementById("colorwayTable").innerHTML = colorwayRows.length === 0
+      ? `<tbody><tr><td style="padding:16px 8px;color:var(--text-muted);">No customized orders recorded yet.</td></tr></tbody>`
+      : `
+        <thead><tr><th>Design</th><th>Blank SKU</th><th>Base Color</th><th>Thread Color</th><th>Units Ordered</th><th>Remaining In Colorway</th></tr></thead>
+        <tbody>
+          ${colorwayRows.map((r) => {
+            const product = SD_PRODUCTS.find((p) => p.id === r.productId);
+            const base = sdGarmentColor(r.baseColor);
+            const thread = sdThreadColor(r.threadColor);
+            const remaining = SD_COLORWAY_CAP - r.qty;
+            return `
+              <tr>
+                <td>${product ? product.name : r.productId}</td>
+                <td style="font-size:.82rem;color:var(--text-muted);">${product ? product.blankSku || "—" : "—"}</td>
+                <td><span class="swatch swatch--mini" style="background:${base.hex};"></span> ${base.label}</td>
+                <td><span class="swatch swatch--mini" style="background:${thread.hex};"></span> ${thread.label} (Isacord ${thread.isacord})</td>
+                <td>${r.qty}</td>
+                <td style="color:${remaining <= 50 ? "#b3261e" : "inherit"};font-weight:${remaining <= 50 ? 700 : 400};">${remaining <= 0 ? "Sold out" : remaining}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      `;
 
     const recent = sdGetOrders()
       .filter(o => o.type === "retail" || o.type === "business")

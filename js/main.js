@@ -29,36 +29,47 @@ function sdSet(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-/* ---------------- cart ---------------- */
+/* ---------------- cart ----------------
+   Each line carries an optional baseColor/threadColor (from a product's
+   customize box), so the same product in two different colorways is
+   tracked as two separate cart lines. lineId is the unique cart key;
+   `id` stays the plain productId for catalog lookups. */
 function sdGetCart() { return sdGet(SD_KEYS.cart, []); }
 function sdSaveCart(cart) { sdSet(SD_KEYS.cart, cart); sdUpdateCartBadge(); }
 function sdCartCount() { return sdGetCart().reduce((sum, l) => sum + l.qty, 0); }
-function sdAddToCart(productId, qty = 1) {
+function sdCartLineId(productId, baseColor, threadColor) {
+  return `${productId}::${baseColor || ""}::${threadColor || ""}`;
+}
+function sdAddToCart(productId, qty = 1, options = {}) {
+  const { baseColor = null, threadColor = null } = options;
   const cart = sdGetCart();
-  const existing = cart.find((l) => l.id === productId);
+  const lineId = sdCartLineId(productId, baseColor, threadColor);
+  const existing = cart.find((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) === lineId);
   if (existing) existing.qty += qty;
-  else cart.push({ id: productId, qty });
+  else cart.push({ id: productId, qty, baseColor, threadColor });
   sdSaveCart(cart);
 }
-function sdUpdateQty(productId, qty) {
+function sdUpdateQty(lineId, qty) {
   let cart = sdGetCart();
   if (qty <= 0) {
-    cart = cart.filter((l) => l.id !== productId);
+    cart = cart.filter((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) !== lineId);
   } else {
-    const line = cart.find((l) => l.id === productId);
+    const line = cart.find((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) === lineId);
     if (line) line.qty = qty;
   }
   sdSaveCart(cart);
 }
-function sdRemoveFromCart(productId) {
-  sdSaveCart(sdGetCart().filter((l) => l.id !== productId));
+function sdRemoveFromCart(lineId) {
+  sdSaveCart(sdGetCart().filter((l) => sdCartLineId(l.id, l.baseColor, l.threadColor) !== lineId));
 }
 function sdCartLinesWithProducts() {
   const products = typeof SD_PRODUCTS !== "undefined" ? SD_PRODUCTS : [];
   return sdGetCart()
     .map((line) => {
       const product = products.find((p) => p.id === line.id);
-      return product ? { ...line, product } : null;
+      if (!product) return null;
+      const lineId = sdCartLineId(line.id, line.baseColor, line.threadColor);
+      return { ...line, lineId, product };
     })
     .filter(Boolean);
 }
@@ -135,7 +146,6 @@ function sdRenderHeader(activePage) {
     ["index.html", "Home"],
     ["products.html", "Shop"],
     ["business.html", "Business"],
-    ["layaway.html", "Layaway"],
     ["about.html", "About"],
     ["careers.html", "Careers"],
   ];
@@ -180,7 +190,7 @@ function sdRenderFooter() {
     <div class="newsletter">
       <div class="container">
         <span class="eyebrow">Join the Roster</span>
-        <h2>Get early access to drops &amp; layaway perks</h2>
+        <h2>Get early access to new designs &amp; colorway drops</h2>
         <form id="newsletterForm">
           <input type="email" required placeholder="you@email.com" aria-label="Email address" />
           <button type="submit" class="btn btn-gold">Sign Up</button>
@@ -195,7 +205,7 @@ function sdRenderFooter() {
               <img src="assets/logo-icon.png" alt="Sodo Dumaki logo" />
               <span class="brand-word">SODO <span>DUMAKI</span></span>
             </a>
-            <p>Athletic-designer gear built for the game and the street. Purple &amp; gold on the court, black &amp; grey off it.</p>
+            <p>Athletic-designer gear built for the game and the street — designer-level construction, and every signature piece customizable down to the thread.</p>
             <div class="social-row">
               <a href="#" aria-label="Instagram">IG</a>
               <a href="#" aria-label="TikTok">TT</a>
@@ -217,7 +227,7 @@ function sdRenderFooter() {
               <li><a href="about.html">Our Story</a></li>
               <li><a href="careers.html">Careers</a></li>
               <li><a href="business.html">Business &amp; Bulk Orders</a></li>
-              <li><a href="layaway.html">Layaway</a></li>
+              <li><a href="layaway.html">Business Layaway</a></li>
               <li><a href="rewards.html">Sodo Rewards</a></li>
               <li><a href="account.html">My Account</a></li>
             </ul>
@@ -250,6 +260,45 @@ function sdRenderFooter() {
 }
 
 /* ---------------- product card rendering ---------------- */
+function sdSwatchRowHtml(group, colors, defaultKey) {
+  return colors.map((c, i) => `
+    <button type="button" class="swatch ${c.key === (defaultKey || colors[0].key) ? "active" : ""}"
+      data-swatch-group="${group}" data-swatch-value="${c.key}"
+      style="background:${c.hex};" title="${c.label}${c.isacord ? " (Isacord " + c.isacord + ")" : ""}"
+      aria-label="${c.label}"></button>
+  `).join("");
+}
+
+function sdCustomizeBoxHtml(p) {
+  if (p.customizable) {
+    const soldNow = sdColorwaySoldCount(p.id, SD_GARMENT_COLORS[0].key, SD_THREAD_COLORS[0].key);
+    return `
+      <div class="customize-box" data-customize="${p.id}">
+        <div class="customize-row">
+          <span class="customize-label">Base Color</span>
+          <div class="swatch-row">${sdSwatchRowHtml("base", SD_GARMENT_COLORS)}</div>
+        </div>
+        <div class="customize-row">
+          <span class="customize-label">Thread Color</span>
+          <div class="swatch-row">${sdSwatchRowHtml("thread", SD_THREAD_COLORS)}</div>
+        </div>
+        <div class="colorway-stock" data-colorway-stock>${soldNow} of ${SD_COLORWAY_CAP} made in this colorway</div>
+      </div>
+    `;
+  }
+  if (p.colorizable) {
+    return `
+      <div class="customize-box customize-box--basic" data-customize="${p.id}">
+        <div class="customize-row">
+          <span class="customize-label">Color</span>
+          <div class="swatch-row">${sdSwatchRowHtml("base", SD_GARMENT_COLORS)}</div>
+        </div>
+      </div>
+    `;
+  }
+  return "";
+}
+
 function sdProductCardHtml(p) {
   const badge = p.badge ? `<span class="badge ${p.badge === "New" ? "badge-purple" : ""}">${p.badge}</span>` : "";
   const buyBtn = p.squareLink
@@ -265,25 +314,59 @@ function sdProductCardHtml(p) {
         <span class="product-cat">${p.category}</span>
         <p class="product-name">${p.name}</p>
         <span class="product-price">${sdFormatPrice(p.price)}</span>
+        ${sdCustomizeBoxHtml(p)}
         <div class="product-actions">
           ${buyBtn}
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline" data-add-to-cart="${p.id}">Add to Cart</button>
-            <a class="btn btn-outline" href="layaway.html?item=${p.id}">Layaway</a>
-          </div>
+          <button class="btn btn-outline btn-block" data-add-to-cart="${p.id}">Add to Cart</button>
         </div>
       </div>
     </div>
   `;
 }
 
-function sdBindAddToCartButtons(root = document) {
+function sdBindProductCardInteractions(root = document) {
+  root.querySelectorAll(".product-card").forEach((card) => {
+    card.querySelectorAll("[data-swatch-group]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const group = btn.dataset.swatchGroup;
+        card.querySelectorAll(`[data-swatch-group="${group}"]`).forEach((b) => b.classList.toggle("active", b === btn));
+        sdUpdateColorwayStock(card);
+      });
+    });
+    sdUpdateColorwayStock(card);
+  });
+
   root.querySelectorAll("[data-add-to-cart]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      sdAddToCart(btn.getAttribute("data-add-to-cart"), 1);
+      const card = btn.closest(".product-card");
+      const productId = btn.getAttribute("data-add-to-cart");
+      const baseBtn = card?.querySelector('[data-swatch-group="base"].active');
+      const threadBtn = card?.querySelector('[data-swatch-group="thread"].active');
+      sdAddToCart(productId, 1, {
+        baseColor: baseBtn ? baseBtn.dataset.swatchValue : null,
+        threadColor: threadBtn ? threadBtn.dataset.swatchValue : null,
+      });
       sdToast("Added to cart");
     });
   });
+}
+// kept as an alias — older pages may still call this name
+function sdBindAddToCartButtons(root = document) { sdBindProductCardInteractions(root); }
+
+function sdUpdateColorwayStock(card) {
+  const stockEl = card.querySelector("[data-colorway-stock]");
+  if (!stockEl) return;
+  const productId = card.querySelector("[data-add-to-cart]")?.getAttribute("data-add-to-cart");
+  const baseBtn = card.querySelector('[data-swatch-group="base"].active');
+  const threadBtn = card.querySelector('[data-swatch-group="thread"].active');
+  if (!productId || !baseBtn || !threadBtn) return;
+  const sold = sdColorwaySoldCount(productId, baseBtn.dataset.swatchValue, threadBtn.dataset.swatchValue);
+  const remaining = SD_COLORWAY_CAP - sold;
+  stockEl.textContent = remaining <= 0
+    ? `Sold out in this colorway (${SD_COLORWAY_CAP}/${SD_COLORWAY_CAP} made)`
+    : `${sold} of ${SD_COLORWAY_CAP} made in this colorway`;
+  stockEl.classList.toggle("colorway-stock--low", remaining > 0 && remaining <= 50);
+  stockEl.classList.toggle("colorway-stock--out", remaining <= 0);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

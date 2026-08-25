@@ -18,7 +18,7 @@
   <div class="container">
     <span class="eyebrow">The Full Collection</span>
     <h1>Shop Sodo Dumaki</h1>
-    <p>Performance fabrics, designer detailing. Every piece ships fast — or start a layaway plan at checkout.</p>
+    <p>Performance fabrics, designer detailing. Every signature design is yours to customize — pick a base color and a thread color, and make it a one-of-a-kind colorway.</p>
   </div>
 </div>
 
@@ -33,6 +33,7 @@
 
 <script src="js/products-data.js"></script>
 <script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
 <script>
   sdRenderHeader("products.html");
   sdRenderFooter();
@@ -43,7 +44,7 @@
   function renderProducts(category) {
     const items = category === "all" ? SD_PRODUCTS : SD_PRODUCTS.filter(p => p.category === category);
     gridEl.innerHTML = items.map(sdProductCardHtml).join("");
-    sdBindAddToCartButtons(gridEl);
+    sdBindProductCardInteractions(gridEl);
   }
 
   function setActiveTab(category) {

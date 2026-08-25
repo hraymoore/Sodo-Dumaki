@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Layaway — Sodo Dumaki</title>
-<meta name="description" content="Start a Sodo Dumaki layaway plan: 60% down to begin your order, 40% due at completion." />
+<title>Business Layaway — Sodo Dumaki</title>
+<meta name="description" content="Layaway for Sodo Dumaki business and bulk uniform orders: 60% down to begin production, 40% due at completion." />
 <link rel="icon" href="assets/logo-icon.png" type="image/png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,9 +16,9 @@
 
 <div class="page-hero">
   <div class="container">
-    <span class="eyebrow">No Interest &middot; No Credit Check</span>
-    <h1>Layaway</h1>
-    <p>Lock in your gear today. Pay 60% to start your order, and the remaining 40% when it's complete — before it ships.</p>
+    <span class="eyebrow">For Business &amp; Bulk Orders &middot; No Interest &middot; No Credit Check</span>
+    <h1>Business Layaway</h1>
+    <p>Layaway is available for qualifying business and bulk uniform orders (100-piece minimum) — pay 60% to start production, and the remaining 40% when it's complete, before it ships. Shopping for yourself? Every retail order pays in full via secure Square checkout.</p>
   </div>
 </div>
 
@@ -30,13 +30,13 @@
     <div class="layaway-steps">
       <div class="step-card">
         <div class="step-num">1</div>
-        <h3>Choose Your Gear</h3>
-        <p>Pick any item (or full order) from the collection and choose "Layaway" instead of full payment at checkout.</p>
+        <h3>Submit A Bulk Request</h3>
+        <p>Tell us what your team, school, or organization needs from the <a href="business.html" style="color:var(--sd-purple);font-weight:600;">Business &amp; Bulk Orders</a> page, and choose "Layaway" as your payment preference.</p>
       </div>
       <div class="step-card">
         <div class="step-num">2</div>
         <h3>Pay 60% Down</h3>
-        <p>Your order is placed into production only after the 60% deposit clears. This locks your size and color.</p>
+        <p>Your order is placed into production only after the 60% deposit clears. This locks your sizes, colors, and design.</p>
       </div>
       <div class="step-card">
         <div class="step-num">3</div>
@@ -50,20 +50,14 @@
 <section class="section section--alt">
   <div class="container">
     <span class="eyebrow">Estimate Your Plan</span>
-    <h2>Layaway Calculator</h2>
+    <h2>Bulk Order Deposit Calculator</h2>
     <div class="divider-gold"></div>
     <div class="calc-card">
       <div class="grid-2" style="align-items:flex-start;">
         <div>
           <div class="field">
-            <label for="calcProduct">Choose a product (optional)</label>
-            <select id="calcProduct">
-              <option value="">— Custom amount —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="calcAmount">Order total ($)</label>
-            <input type="number" id="calcAmount" min="1" step="0.01" placeholder="e.g. 148.00" />
+            <label for="calcAmount">Estimated bulk order total ($)</label>
+            <input type="number" id="calcAmount" min="1" step="0.01" placeholder="e.g. 4800.00" />
           </div>
           <p class="field-hint" style="color:var(--sd-grey-300);">Adjust the amount to see your deposit and balance update instantly.</p>
         </div>
@@ -73,7 +67,7 @@
           <div class="item"><div class="num">$0.00</div><div class="label">Order Total</div></div>
         </div>
       </div>
-      <a href="checkout.html?mode=layaway" class="btn btn-gold" style="margin-top:26px;">Start This Layaway Plan</a>
+      <a href="business.html" class="btn btn-gold" style="margin-top:26px;">Start A Bulk Order Request</a>
     </div>
   </div>
 </section>
@@ -81,9 +75,13 @@
 <section class="section">
   <div class="container">
     <span class="eyebrow">Good To Know</span>
-    <h2>Layaway FAQ</h2>
+    <h2>Business Layaway FAQ</h2>
     <div class="divider-gold"></div>
     <div class="grid-3">
+      <div class="value-card">
+        <h3>Who qualifies?</h3>
+        <p>Layaway is available for business/bulk uniform orders meeting our 100-piece minimum — teams, schools, and organizations placing a custom order through the Business page.</p>
+      </div>
       <div class="value-card">
         <h3>When does my order start?</h3>
         <p>Production begins the moment your 60% deposit clears — not before. Nothing ships until it's paid in full.</p>
@@ -101,12 +99,8 @@
         <p>Never. Layaway is a payment schedule, not a loan — no interest, no credit check, no fees.</p>
       </div>
       <div class="value-card">
-        <h3>How do I pay the balance?</h3>
-        <p>You'll get a secure Square invoice by email once your order is ready for final payment.</p>
-      </div>
-      <div class="value-card">
-        <h3>Does layaway apply to sale items?</h3>
-        <p>Yes — layaway is available storewide, including limited drops and sale pieces, while supplies last.</p>
+        <h3>What about individual retail orders?</h3>
+        <p>Retail orders from the shop pay in full at checkout via Square. Layaway is reserved for qualifying business and bulk uniform orders.</p>
       </div>
     </div>
   </div>
@@ -119,9 +113,6 @@
 <script>
   sdRenderHeader("layaway.html");
   sdRenderFooter();
-
-  const select = document.getElementById("calcProduct");
-  select.innerHTML += SD_PRODUCTS.map(p => `<option value="${p.price}" data-id="${p.id}">${p.name} — ${sdFormatPrice(p.price)}</option>`).join("");
 
   const amountInput = document.getElementById("calcAmount");
   const resultEl = document.getElementById("calcResult");
@@ -136,23 +127,8 @@
       <div class="item"><div class="num">${sdFormatPrice(t)}</div><div class="label">Order Total</div></div>
     `;
   }
-
-  select.addEventListener("change", () => {
-    if (select.value) {
-      amountInput.value = Number(select.value).toFixed(2);
-      updateCalc(select.value);
-    }
-  });
   amountInput.addEventListener("input", () => updateCalc(amountInput.value));
-
-  const params = new URLSearchParams(location.search);
-  const preselect = params.get("item");
-  if (preselect) {
-    const opt = [...select.options].find(o => o.dataset.id === preselect);
-    if (opt) { select.value = opt.value; amountInput.value = Number(opt.value).toFixed(2); updateCalc(opt.value); }
-  } else {
-    updateCalc(0);
-  }
+  updateCalc(0);
 </script>
 </body>
 </html>

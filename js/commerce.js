@@ -45,6 +45,70 @@ const SD_SIZE_LIST = [
 
 const SD_BULK_MINIMUM = 100;
 
+/* ---------------- custom colorways (retail catalog) ----------------
+   Every signature Sodo Dumaki design is sold in a limited run per
+   base-garment-color + thread-color combination — SD_COLORWAY_CAP units
+   of any one design+colorway, ever. This keeps each colorway feeling
+   limited-edition instead of a standard restocked SKU. Thread codes are
+   commonly used Isacord 40 embroidery reference numbers — confirm exact
+   codes with your embroidery vendor before production. */
+const SD_COLORWAY_CAP = 555;
+
+/* Trimmed to the 7 most popular options per group — brand colors
+   (purple/gold) plus the most commonly ordered universal colors. */
+const SD_GARMENT_COLORS = [
+  { key: "black", label: "Black", hex: "#0B0B0D" },
+  { key: "white", label: "White", hex: "#FAFAFA" },
+  { key: "charcoal", label: "Charcoal Grey", hex: "#3A3A3F" },
+  { key: "purple", label: "Sodo Purple", hex: "#4B2E83" },
+  { key: "gold", label: "Sodo Gold", hex: "#D4AF37" },
+  { key: "navy", label: "Navy", hex: "#1B2A4A" },
+  { key: "red", label: "Red", hex: "#B3241C" },
+];
+
+const SD_THREAD_COLORS = [
+  { key: "purple", label: "Sodo Purple", hex: "#4B2E83", isacord: "3313" },
+  { key: "gold", label: "Sodo Gold", hex: "#D4AF37", isacord: "0210" },
+  { key: "black", label: "Black", hex: "#0B0B0D", isacord: "0900" },
+  { key: "white", label: "White", hex: "#FAFAFA", isacord: "0100" },
+  { key: "silvergrey", label: "Silver Grey", hex: "#B7B7BC", isacord: "0148" },
+  { key: "red", label: "True Red", hex: "#C8102E", isacord: "1900" },
+  { key: "royalblue", label: "Royal Blue", hex: "#2456B2", isacord: "3540" },
+];
+
+function sdGarmentColor(key) { return SD_GARMENT_COLORS.find((c) => c.key === key) || SD_GARMENT_COLORS[0]; }
+function sdThreadColor(key) { return SD_THREAD_COLORS.find((c) => c.key === key) || SD_THREAD_COLORS[0]; }
+
+/* Demo-scope only: this counts colorway units from orders recorded in
+   THIS browser's localStorage, not real cross-customer sales. Track the
+   real number in the Analytics dashboard's Colorway Production Report
+   once a real backend/database is wired up. */
+function sdColorwaySoldCount(productId, baseColor, threadColor) {
+  const orders = sdGetOrders().filter((o) => o.type === "retail" && o.meta && Array.isArray(o.meta.colorwayLines));
+  let count = 0;
+  orders.forEach((o) => {
+    o.meta.colorwayLines.forEach((line) => {
+      if (line.productId === productId && line.baseColor === baseColor && line.threadColor === threadColor) {
+        count += line.qty;
+      }
+    });
+  });
+  return count;
+}
+
+function sdColorwayBreakdown() {
+  const orders = sdGetOrders().filter((o) => o.type === "retail" && o.meta && Array.isArray(o.meta.colorwayLines));
+  const map = new Map();
+  orders.forEach((o) => {
+    o.meta.colorwayLines.forEach((line) => {
+      const key = `${line.productId}__${line.baseColor}__${line.threadColor || ""}`;
+      if (!map.has(key)) map.set(key, { productId: line.productId, baseColor: line.baseColor, threadColor: line.threadColor, qty: 0 });
+      map.get(key).qty += line.qty;
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => b.qty - a.qty);
+}
+
 /* ---------------- shared form fragments ---------------- */
 function sdStateSelectHtml(id, required = true, selected = "") {
   const opts = SD_US_STATES.map(([abbr, name]) => `<option value="${abbr}" ${abbr === selected ? "selected" : ""}>${name}</option>`).join("");
@@ -155,13 +219,21 @@ function sdSeedSampleOrders(count = 60) {
       });
     } else {
       const total = Math.round((30 + Math.random() * 220) * 100) / 100;
+      const catalog = (typeof SD_PRODUCTS !== "undefined" ? SD_PRODUCTS : []).filter((p) => p.customizable);
+      const colorwayLines = [];
+      if (catalog.length > 0) {
+        const product = catalog[Math.floor(Math.random() * catalog.length)];
+        const base = SD_GARMENT_COLORS[Math.floor(Math.random() * SD_GARMENT_COLORS.length)];
+        const thread = SD_THREAD_COLORS[Math.floor(Math.random() * SD_THREAD_COLORS.length)];
+        colorwayLines.push({ productId: product.id, baseColor: base.key, threadColor: thread.key, qty: 1 + Math.floor(Math.random() * 3) });
+      }
       orders.push({
         id: "sample_" + i + "_" + Math.random().toString(36).slice(2, 6),
         date, type: "retail",
         email: `customer${i}@example.com`,
         state, city, zip: "00000", total,
         items: ["Sample Item"],
-        meta: { paymentType: "full" },
+        meta: { paymentType: "full", colorwayLines },
       });
     }
   }

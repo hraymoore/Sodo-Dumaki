@@ -39,11 +39,8 @@
           <div class="field"><label for="ckState">State</label><div id="ckStateMount"></div></div>
           <div class="field"><label for="ckZip">ZIP Code</label><input type="text" id="ckZip" required /></div>
         </div>
-        <div class="field">
-          <label><input type="checkbox" id="ckLayaway" style="width:auto;display:inline-block;margin-right:8px;" /> Use Layaway (pay 60% now, 40% at completion)</label>
-        </div>
         <button type="submit" class="btn btn-gold btn-block" id="ckSubmit">Continue to Payment</button>
-        <p class="form-note">Standard orders pay securely via Square. Layaway orders are confirmed by email with a Square invoice for your deposit.</p>
+        <p class="form-note">Pay securely via Square. Looking for layaway on a large team or organization order? That's handled through <a href="business.html" style="color:var(--sd-purple);font-weight:600;">Business &amp; Bulk Orders</a>.</p>
       </form>
     </div>
 
@@ -70,10 +67,6 @@
   sdRenderHeader("checkout.html");
   sdRenderFooter();
 
-  const params = new URLSearchParams(location.search);
-  const layawayCheckbox = document.getElementById("ckLayaway");
-  if (params.get("mode") === "layaway") layawayCheckbox.checked = true;
-
   document.getElementById("ckStateMount").innerHTML = sdStateSelectHtml("ckState");
 
   const user = sdCurrentUser();
@@ -90,32 +83,28 @@
     noticeEl.innerHTML = `<a href="login.html?next=checkout.html" style="color:var(--sd-purple);font-weight:600;">Sign in or create an account</a>, or continue below as a guest.`;
   }
 
+  function colorwaySummaryLine(l) {
+    if (!l.baseColor) return "";
+    const base = sdGarmentColor(l.baseColor).label;
+    const thread = l.threadColor ? ` &middot; ${sdThreadColor(l.threadColor).label} thread` : "";
+    return `<div style="font-size:.78rem;color:var(--text-muted);">${base}${thread}</div>`;
+  }
+
   function renderSummary() {
     const lines = sdCartLinesWithProducts();
     const subtotal = sdCartSubtotal();
     const shipping = subtotal >= 100 || subtotal === 0 ? 0 : 8;
     const total = subtotal + shipping;
-    const useLayaway = layawayCheckbox.checked;
-    const deposit = total * 0.6;
-    const balance = total * 0.4;
 
-    const itemRows = lines.map(l => `<div class="summary-row"><span>${l.qty} &times; ${l.product.name}</span><span>${sdFormatPrice(l.product.price * l.qty)}</span></div>`).join("");
+    const itemRows = lines.map(l => `<div class="summary-row" style="align-items:flex-start;"><span>${l.qty} &times; ${l.product.name}${colorwaySummaryLine(l)}</span><span>${sdFormatPrice(l.product.price * l.qty)}</span></div>`).join("");
 
     document.getElementById("orderSummary").innerHTML = `
       <h3 style="margin-bottom:16px;">Order Summary</h3>
       ${itemRows || '<p style="color:var(--text-muted);">Your cart is empty.</p>'}
       <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? "Free" : sdFormatPrice(shipping)}</span></div>
       <div class="summary-row total"><span>Total</span><span>${sdFormatPrice(total)}</span></div>
-      ${useLayaway ? `
-        <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--border);">
-          <div class="summary-row"><span>Due Today (60%)</span><span><strong>${sdFormatPrice(deposit)}</strong></span></div>
-          <div class="summary-row"><span>Due At Completion (40%)</span><span>${sdFormatPrice(balance)}</span></div>
-        </div>
-      ` : ""}
     `;
-    document.getElementById("ckSubmit").textContent = useLayaway ? "Request Layaway Plan" : "Continue to Payment";
   }
-  layawayCheckbox.addEventListener("change", renderSummary);
   renderSummary();
 
   document.getElementById("checkoutForm").addEventListener("submit", (e) => {
@@ -132,67 +121,43 @@
     const zip = document.getElementById("ckZip").value.trim();
     sdSubscribeNewsletter(email);
 
-    const orderItems = lines.map(l => `${l.qty} x ${l.product.name}`);
+    const orderItems = lines.map(l => {
+      const colorway = l.baseColor ? ` (${sdGarmentColor(l.baseColor).label}${l.threadColor ? " / " + sdThreadColor(l.threadColor).label + " thread" : ""})` : "";
+      return `${l.qty} x ${l.product.name}${colorway}`;
+    });
+    const colorwayLines = lines.filter(l => l.baseColor).map(l => ({ productId: l.id, baseColor: l.baseColor, threadColor: l.threadColor, qty: l.qty }));
 
     const subtotal = sdCartSubtotal();
     const shipping = subtotal >= 100 ? 0 : 8;
     const total = subtotal + shipping;
-    const useLayaway = layawayCheckbox.checked;
 
     document.getElementById("checkoutSection").style.display = "none";
     document.getElementById("confirmSection").style.display = "block";
     const actionsEl = document.getElementById("confirmActions");
 
-    if (useLayaway) {
-      const deposit = total * 0.6;
-      const balance = total * 0.4;
-      document.getElementById("confirmEyebrow").textContent = "Layaway Requested";
-      document.getElementById("confirmHeading").textContent = "One Step Left";
-      document.getElementById("confirmBody").textContent =
-        `Send us your layaway request below. We'll reply to ${email} with a secure Square invoice for your ${sdFormatPrice(deposit)} deposit (60%) — your order enters production once it's paid, and the remaining ${sdFormatPrice(balance)} (40%) is due at completion, before it ships.`;
+    document.getElementById("confirmEyebrow").textContent = "Almost There";
+    document.getElementById("confirmHeading").textContent = "Complete Your Payment";
 
-      const bodyLines = [
-        `Name: ${first} ${last}`,
-        `Email: ${email}`,
-        `Shipping Address: ${address}, ${city} ${zip}`,
-        ``,
-        `Items:`,
-        ...lines.map(l => `- ${l.qty} x ${l.product.name} (${sdFormatPrice(l.product.price)} each)`),
-        ``,
-        `Order Total: ${sdFormatPrice(total)}`,
-        `Deposit Due Now (60%): ${sdFormatPrice(deposit)}`,
-        `Balance Due At Completion (40%): ${sdFormatPrice(balance)}`,
-      ];
-      const mailLink = `mailto:layaway@sododumaki.com?subject=${encodeURIComponent("Layaway Request — " + first + " " + last)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
-
-      actionsEl.innerHTML = `<a class="btn btn-gold" href="${mailLink}">Email My Layaway Request</a>`;
-
-      sdRecordOrder({ type: "retail", email, state, city, zip, total, items: orderItems, meta: { paymentType: "layaway-request" } });
-    } else {
-      document.getElementById("confirmEyebrow").textContent = "Almost There";
-      document.getElementById("confirmHeading").textContent = "Complete Your Payment";
-
-      const currentUser = sdCurrentUser();
-      let pointsNote = "";
-      if (currentUser && !currentUser.isBusiness) {
-        const earned = sdAwardPoints(email, total);
-        const tier = sdGetTier(currentUser.points || 0);
-        pointsNote = ` You just earned ${earned} Sodo Rewards points (${tier.name} tier) — track them under My Account.`;
-      } else if (!currentUser) {
-        pointsNote = ` Sign in next time to start earning Sodo Rewards points on every order.`;
-      }
-      document.getElementById("confirmBody").textContent =
-        `Thanks, ${first || "there"} — pay for each item below through our secure Square checkout. Every item opens in a new tab; once all payments are complete, you're all set. A copy of your order has been noted for ${email}.${pointsNote}`;
-
-      actionsEl.innerHTML = lines.map(l => {
-        const lineTotal = sdFormatPrice(l.product.price * l.qty);
-        return l.product.squareLink
-          ? `<a class="btn btn-gold" href="${l.product.squareLink}" target="_blank" rel="noopener">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Square</a>`
-          : `<button class="btn btn-gold" disabled title="Square payment link not connected yet">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Coming Soon</button>`;
-      }).join("");
-
-      sdRecordOrder({ type: "retail", email, state, city, zip, total, items: orderItems, meta: { paymentType: "full" } });
+    const currentUser = sdCurrentUser();
+    let pointsNote = "";
+    if (currentUser && !currentUser.isBusiness) {
+      const earned = sdAwardPoints(email, total);
+      const tier = sdGetTier(currentUser.points || 0);
+      pointsNote = ` You just earned ${earned} Sodo Rewards points (${tier.name} tier) — track them under My Account.`;
+    } else if (!currentUser) {
+      pointsNote = ` Sign in next time to start earning Sodo Rewards points on every order.`;
     }
+    document.getElementById("confirmBody").textContent =
+      `Thanks, ${first || "there"} — pay for each item below through our secure Square checkout. Every item opens in a new tab; once all payments are complete, you're all set. A copy of your order has been noted for ${email}.${pointsNote}`;
+
+    actionsEl.innerHTML = lines.map(l => {
+      const lineTotal = sdFormatPrice(l.product.price * l.qty);
+      return l.product.squareLink
+        ? `<a class="btn btn-gold" href="${l.product.squareLink}" target="_blank" rel="noopener">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Square</a>`
+        : `<button class="btn btn-gold" disabled title="Square payment link not connected yet">Pay ${lineTotal} for ${l.qty} &times; ${l.product.name} — Coming Soon</button>`;
+    }).join("");
+
+    sdRecordOrder({ type: "retail", email, state, city, zip, total, items: orderItems, meta: { paymentType: "full", colorwayLines } });
 
     sdSaveCart([]);
   });

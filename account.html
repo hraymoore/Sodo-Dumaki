@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>My Account — Sodo Dumaki</title>
-<meta name="description" content="Manage your Sodo Dumaki profile, orders, and layaway plans." />
+<meta name="description" content="Manage your Sodo Dumaki profile, order history, and Sodo Rewards points." />
 <link rel="icon" href="assets/logo-icon.png" type="image/png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -26,7 +26,6 @@
     <div class="account-nav" id="accountNav">
       <button data-panel="profile" class="active">Profile</button>
       <button data-panel="orders">Order History</button>
-      <button data-panel="layaway">Layaway Plans</button>
       <button data-panel="rewards">Sodo Rewards</button>
       <button data-panel="logout">Sign Out</button>
     </div>
@@ -42,14 +41,6 @@
         <div class="order-row"><div><strong>#SD-10432</strong><div style="color:var(--sd-grey-500);font-size:.85rem;">Dumaki Coach's Bench Jacket &middot; Aug 2, 2026</div></div><span class="status-pill shipped">Shipped</span></div>
         <div class="order-row"><div><strong>#SD-10287</strong><div style="color:var(--sd-grey-500);font-size:.85rem;">Sodo Signature Crewneck Hoodie &middot; Jun 14, 2026</div></div><span class="status-pill paid">Delivered</span></div>
         <p style="color:var(--sd-grey-500);font-size:.85rem;margin-top:16px;">Sample data shown for demo purposes — real order history will need to be pulled from your Square account once connected.</p>
-      </div>
-      <div id="panel-layaway" style="display:none;">
-        <h3>Layaway Plans</h3>
-        <div class="order-row">
-          <div><strong>#LP-2201</strong><div style="color:var(--sd-grey-500);font-size:.85rem;">Sodo Elite Duffel Bag &middot; Total $95.00</div></div>
-          <span class="status-pill layaway">60% Paid — In Production</span>
-        </div>
-        <p style="color:var(--sd-grey-500);font-size:.85rem;margin-top:16px;">Sample data shown for demo purposes. Start a new plan any time from the <a href="layaway.html" style="color:var(--sd-purple);">Layaway page</a>.</p>
       </div>
       <div id="panel-rewards" style="display:none;">
         <h3>Sodo Rewards</h3>
@@ -89,7 +80,7 @@
 <section class="section" id="guestSection" style="display:none;">
   <div class="container" style="text-align:center;">
     <h2>You're Shopping As A Guest</h2>
-    <p style="max-width:480px;margin:0 auto 24px;color:var(--text-muted);">Create a free account any time to save your info, track orders, and manage layaway plans.</p>
+    <p style="max-width:480px;margin:0 auto 24px;color:var(--text-muted);">Create a free account any time to save your info, track orders, and start earning Sodo Rewards points.</p>
     <div class="hero-cta" style="justify-content:center;">
       <a href="login.html?next=account.html" class="btn btn-primary">Create Account / Sign In</a>
       <a href="products.html" class="btn btn-outline-light">Continue Shopping</a>
@@ -249,7 +240,7 @@
       if (btn.dataset.panel === "logout") { sdLogout(); location.href = "index.html"; return; }
       nav.querySelectorAll("button").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      ["profile","orders","layaway","rewards"].forEach(p => {
+      ["profile","orders","rewards"].forEach(p => {
         document.getElementById(`panel-${p}`).style.display = p === btn.dataset.panel ? "block" : "none";
       });
       if (btn.dataset.panel === "rewards") renderRewards();

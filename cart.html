@@ -30,6 +30,7 @@
 
 <script src="js/products-data.js"></script>
 <script src="js/main.js"></script>
+<script src="js/commerce.js"></script>
 <script>
   sdRenderHeader("cart.html");
   sdRenderFooter();
@@ -50,23 +51,32 @@
     }
 
     const subtotal = sdCartSubtotal();
-    const rows = lines.map(l => `
-      <tr data-line="${l.id}">
+    const rows = lines.map(l => {
+      const colorwayLine = l.baseColor
+        ? `<div class="cart-colorway">
+            <span class="swatch swatch--mini" style="background:${sdGarmentColor(l.baseColor).hex};" title="${sdGarmentColor(l.baseColor).label}"></span> ${sdGarmentColor(l.baseColor).label}
+            ${l.threadColor ? `<span class="swatch swatch--mini" style="background:${sdThreadColor(l.threadColor).hex};" title="${sdThreadColor(l.threadColor).label}"></span> ${sdThreadColor(l.threadColor).label} thread` : ""}
+          </div>`
+        : "";
+      return `
+      <tr data-line="${l.lineId}">
         <td>
           <div class="cart-line">
             <img src="${l.product.image}" alt="${l.product.name}" />
             <div>
               <strong>${l.product.name}</strong>
               <div style="font-size:.8rem;color:var(--text-muted);text-transform:capitalize;">${l.product.category}</div>
+              ${colorwayLine}
             </div>
           </div>
         </td>
         <td>${sdFormatPrice(l.product.price)}</td>
-        <td><input type="number" min="1" class="qty-input" data-qty="${l.id}" value="${l.qty}" /></td>
+        <td><input type="number" min="1" class="qty-input" data-qty="${l.lineId}" value="${l.qty}" /></td>
         <td>${sdFormatPrice(l.product.price * l.qty)}</td>
-        <td><button class="remove-link" data-remove="${l.id}">Remove</button></td>
+        <td><button class="remove-link" data-remove="${l.lineId}">Remove</button></td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
 
     contentEl.innerHTML = `
       <div style="overflow-x:auto;">
@@ -82,7 +92,6 @@
           <div class="summary-row"><span>Shipping</span><span>${subtotal >= 100 ? "Free" : "$8.00"}</span></div>
           <div class="summary-row total"><span>Estimated Total</span><span>${sdFormatPrice(subtotal >= 100 ? subtotal : subtotal + 8)}</span></div>
           <a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:16px;">Proceed to Checkout</a>
-          <a href="checkout.html?mode=layaway" class="btn btn-gold btn-block" style="margin-top:10px;">Checkout With Layaway</a>
         </div>
       </div>
     `;
