@@ -12,7 +12,7 @@ This project was scaffolded in a Linux sandbox that cannot reach `dl.google.com`
 
 ## Project structure
 
-- `capacitor.config.json` — points the app at `https://www.sododumaki.com` (`server.url`). App ID: `com.sododumaki.app`.
+- `capacitor.config.json` — points the app at `https://www.sododumaki.com` (`server.url`). App ID: `sodo.app_release` (locked to this value by the Google Play Console app listing — see the "Package name" note below before ever changing it).
 - `android/` — the native Android Studio project Capacitor generated. This is what actually compiles into the APK/AAB.
 - `android/app/src/main/res/` — app icon (adaptive + legacy, generated from `assets/logo.svg`) and splash screen, in brand colors (black `#0B0B0D` background, gold `#D4AF37` ring/text).
 - `www/` — a minimal offline-fallback page, only shown if the app can't reach the live site.
@@ -47,6 +47,8 @@ Add them under the repo's **Settings → Secrets and variables → Actions → N
 `android/app/build.gradle` only applies a signing config when those env vars are present, so local/CI debug builds are unaffected — nothing here changes how `assembleDebug` works.
 
 **Keep the keystore file and its password somewhere safe and permanently backed up outside of GitHub — if it's lost, this exact app listing can never be updated again** and a new listing would be needed under a different package/name. Do not commit the keystore file itself to the repo; only the base64 copy lives in the GitHub secret.
+
+**Package name is locked to `sodo.app_release`.** This isn't a normal reverse-domain ID like `com.sododumaki.app` (which is what this project used originally) — it's whatever package name the Google Play Console app listing was created with, and Play Console will reject any upload whose package name doesn't match exactly (error: "Your APK or Android App Bundle needs to have the package name..."). Once an app exists in Play Console its package name can't be edited from the UI, so the `namespace`/`applicationId` in `android/app/build.gradle`, the `appId` in `capacitor.config.json`, `MainActivity.java`'s location (`android/app/src/main/java/sodo/app_release/`), and `strings.xml`'s `package_name`/`custom_url_scheme` were all changed to match it rather than deleting and recreating the Play Console listing. **Do not "fix" this back to `com.sododumaki.app`** — that would break every future upload to this same app listing. If you ever do want the prettier package name, the only way is deleting the unpublished Play Console app and creating a new one (loses any store listing/screenshots/content-rating work already done there).
 
 ## Getting this onto the Google Play Store — what's still needed
 
