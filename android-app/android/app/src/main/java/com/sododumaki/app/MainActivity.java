@@ -1,4 +1,4 @@
-package sodo.app_release;
+package com.sododumaki.app;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "sodo.app_release"
+    namespace = "com.sododumaki.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "sodo.app_release"
+        applicationId "com.sododumaki.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

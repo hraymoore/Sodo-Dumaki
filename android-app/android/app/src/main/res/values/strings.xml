@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Sodo Dumaki</string>
     <string name="title_activity_main">Sodo Dumaki</string>
-    <string name="package_name">sodo.app_release</string>
-    <string name="custom_url_scheme">sodo.app_release</string>
+    <string name="package_name">com.sododumaki.app</string>
+    <string name="custom_url_scheme">com.sododumaki.app</string>
 </resources>
